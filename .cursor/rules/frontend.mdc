@@ -1,0 +1,26 @@
+---
+description: Next.js consumer and admin UI conventions
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend
+
+- Consume the real API. Do not keep a parallel hardcoded product model.
+- Deal availability, prices, and verification freshness come from the API.
+- Feature folders (`src/features/*`) own feature UI. `src/components` is reusable chrome only.
+- Analytics: emit `analytics.track("deal_opened", payload)` — never vendor SDK calls in components.
+- Maps/geocoding go through `src/lib/maps.ts`. The list-first UI must work when maps are flagged off.
+- Browser geolocation is optional. Neighborhood and city selection must work without it.
+- Empty, loading, and error states are designed UI, not raw exception text.
+- Do not put secrets in `NEXT_PUBLIC_*` variables.
+- Prefer server-rendered pages for indexable city/venue routes. Set canonical URLs to findgood.food.
+- Admin reliability over polish. Reuse the API client; do not duplicate types.
+
+```tsx
+// ❌ BAD
+const isActive = new Date().getHours() >= 15;
+
+// ✅ GOOD
+<DealStatusBadge status={deal.availability.status} />
+```

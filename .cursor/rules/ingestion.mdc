@@ -1,0 +1,29 @@
+---
+description: Crawler, ingestion, and provenance constraints
+globs: services/backend/app/ingestion/**/*.py
+alwaysApply: false
+---
+
+# Ingestion
+
+Pipeline: fetch → snapshot → parse → extract → normalize → validate → candidate → (explicit) publish.
+
+- Fetchers return bytes and HTTP metadata only.
+- Parsers structure content. Extractors identify venues/deals/items.
+- An LLM extractor later implements the same `Extractor` protocol. Do not fork the pipeline.
+- Validators quarantine or reject. They do not write published deals.
+- Publishers create/update consumer-visible rows and a `DealPublication` link.
+- Network fetchers must use `ingestion/safety.py`: https-only (or http), DNS resolve, block private IPs, timeouts, size caps, robots.txt, source enable switch.
+- Do not bypass auth, CAPTCHAs, or access controls. Do not scrape private content.
+- Jobs are idempotent when practical. Use content hashes. Prefer `enqueue_source_refresh(source_id)`.
+- Crawl failures must set `CrawlRun` error category/details and increment retry count. Never swallow exceptions.
+
+```python
+# ❌ BAD
+deal = Deal(title=extracted.title, publication_state="published")
+db.add(deal)
+
+# ✅ GOOD
+candidate = pipeline.ingest(source_id)  # stored, unpublished
+publisher.publish(candidate_id, actor="admin")
+```

@@ -1,0 +1,34 @@
+---
+description: Backend module, API, and database conventions
+globs: services/backend/**/*.py
+alwaysApply: false
+---
+
+# Backend
+
+```
+request → Pydantic schema → app/services → repository → response schema
+```
+
+- Routes live in `app/api/routes`. They inject dependencies; they do not implement rules.
+- Application services orchestrate. Domain services compute.
+- Repositories hide SQLAlchemy. Do not return ORM models from API routes.
+- Public API is `/api/v1/`. Admin is `/api/v1/admin/` and requires the admin key.
+- JSON fields are `snake_case`.
+- Paginate collection endpoints. Bound payload sizes.
+- Avoid N+1: load venues, locations, schedules, items, and verifications in repository queries.
+- Feature flags are read from `app/core/feature_flags.py`, not scattered `os.getenv` calls.
+
+```python
+# ❌ BAD — business logic in a route
+@router.get("/deals/{deal_id}")
+def get_deal(deal_id: UUID, db: Session = Depends(get_db)):
+    deal = db.get(Deal, deal_id)
+    deal.active = datetime.now() > deal.start  # wrong layer, wrong timezone
+    return deal
+
+# ✅ GOOD
+@router.get("/deals/{deal_id}")
+def get_deal(deal_id: UUID, service: DealService = Depends(get_deal_service)):
+    return service.get_published_deal(deal_id)
+```

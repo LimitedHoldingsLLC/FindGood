@@ -1,0 +1,22 @@
+{
+  "venue": {
+    "name": "Nightbird Room",
+    "website": "https://nightbirdroom.example",
+    "phone": "323-555-0190"
+  },
+  "deals": [
+    {
+      "title": "Midnight Negroni",
+      "description": "Late pour of the house negroni after 9 PM.",
+      "deal_type": "late_night",
+      "offering_kind": "drink",
+      "confidence": 0.88,
+      "schedules": [
+        { "days": ["thursday", "friday", "saturday"], "start": "9 PM", "end": "close", "ends_at_close": true }
+      ],
+      "items": [
+        { "name": "House negroni", "normal_price": "15.00", "deal_price": "8.00", "category": "drink" }
+      ]
+    }
+  ]
+}

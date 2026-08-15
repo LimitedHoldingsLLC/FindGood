@@ -1,0 +1,1 @@
+"""FindGood backend application package."""

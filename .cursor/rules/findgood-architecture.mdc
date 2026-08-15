@@ -1,0 +1,38 @@
+---
+description: FindGood architecture and change procedure for every session
+alwaysApply: true
+---
+
+# FindGood agent rules
+
+Inspect `ARCHITECTURE.md` and the owning module before writing code. Search for an existing service, repository, protocol, or component. Do not duplicate behavior.
+
+## Ownership
+
+- HTTP routes validate and delegate. No business rules, no SQL.
+- Domain logic lives in `services/backend/app/domain`. It must not import FastAPI.
+- Persistence goes through repositories in `app/db/repositories`.
+- Ingestion adapters stay in `app/ingestion`. Fetchers do not parse or publish.
+- Frontend feature UI lives in `apps/web/src/features`. Shared chrome in `components`.
+- External vendors (maps, analytics, geocoding) stay behind one adapter.
+
+If you cannot name the owning module, do not start coding.
+
+## Hard constraints
+
+- Never silently change API contracts. Additive fields only unless the user explicitly asks for a break.
+- Never publish unvalidated crawler output. Candidates are intermediate; publishing is explicit.
+- Never overwrite `SourceSnapshot` rows. They are immutable evidence.
+- Preserve Deal → publication → snapshot → source → URL provenance.
+- Schema changes need an Alembic revision. Do not edit applied migrations.
+- Money is `Decimal` / `Numeric`. Never floats.
+- Schedule math honors the venue location timezone. Never assume UTC equals local time.
+- Do not add dependencies that the current stack already covers.
+- Do not place secrets in frontend bundles or source control.
+
+## After a change
+
+- Update tests when behavior changes.
+- Run the relevant pytest module and/or frontend typecheck/tests before claiming completion.
+- Report exactly which files changed and why.
+- Document material architectural decisions in `ARCHITECTURE.md`.

@@ -1,0 +1,107 @@
+# Render Blueprint for FindGood backend infrastructure.
+# Secrets are configured in the Render dashboard — never commit them here.
+# Frontend deploys separately to Vercel from apps/web.
+
+databases:
+  - name: findgood-postgres
+    plan: free
+    databaseName: findgood
+    user: findgood
+    postgresMajorVersion: "16"
+
+  - name: findgood-kv
+    plan: free
+
+services:
+  - type: web
+    name: findgood-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: services/backend
+    buildCommand: pip install -e ".[prod]"
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: QUEUE_BACKEND
+        value: redis
+      - key: DATABASE_URL
+        fromDatabase:
+          name: findgood-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: findgood-kv
+          type: keyvalue
+          property: connectionString
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: API_BASE_URL
+        sync: false
+      - key: WEB_BASE_URL
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  - type: worker
+    name: findgood-worker
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: services/backend
+    buildCommand: pip install -e ".[prod]"
+    startCommand: python -m app.workers.runner
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: QUEUE_BACKEND
+        value: redis
+      - key: DATABASE_URL
+        fromDatabase:
+          name: findgood-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: findgood-kv
+          type: keyvalue
+          property: connectionString
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  - type: cron
+    name: findgood-enqueue-stale-sources
+    runtime: python
+    region: oregon
+    plan: starter
+    rootDir: services/backend
+    schedule: "0 * * * *"
+    buildCommand: pip install -e ".[prod]"
+    startCommand: python -m app.workers.enqueue_stale
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: QUEUE_BACKEND
+        value: redis
+      - key: DATABASE_URL
+        fromDatabase:
+          name: findgood-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: findgood-kv
+          type: keyvalue
+          property: connectionString
+      - key: PYTHONUNBUFFERED
+        value: "1"

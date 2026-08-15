@@ -1,0 +1,23 @@
+{
+  "venue": {
+    "name": "Harbor & Rye",
+    "website": "https://harborandrye.example",
+    "phone": "213-555-0142"
+  },
+  "deals": [
+    {
+      "title": "Weekday Harbor Hour",
+      "description": "House cocktails and rye smash burgers at neighborhood prices.",
+      "deal_type": "happy_hour",
+      "offering_kind": "both",
+      "confidence": 0.92,
+      "schedules": [
+        { "days": ["monday", "tuesday", "wednesday", "thursday", "friday"], "start": "3 PM", "end": "6 PM" }
+      ],
+      "items": [
+        { "name": "Rye smash burger", "normal_price": "$18.00", "deal_price": "$10.00", "category": "food" },
+        { "name": "House old fashioned", "normal_price": "$16.00", "deal_price": "$9.00", "category": "drink" }
+      ]
+    }
+  ]
+}
