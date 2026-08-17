@@ -11,9 +11,6 @@ export function SiteHeader() {
           <Link href="/los-angeles" className="text-muted hover:text-ink">
             Los Angeles
           </Link>
-          <Link href="/admin" className="text-muted hover:text-ink">
-            Admin
-          </Link>
         </nav>
       </div>
     </header>
