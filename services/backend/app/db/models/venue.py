@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from app.db.models.enums import RecordStatus
+from app.db.models.enums import RecordStatus, Vertical
 
 if TYPE_CHECKING:
     from app.db.models.deal import Deal
@@ -21,6 +21,7 @@ class Venue(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     website_url: Mapped[str | None] = mapped_column(String(500))
     phone: Mapped[str | None] = mapped_column(String(40))
     primary_category: Mapped[str] = mapped_column(String(80), default="restaurant", index=True)
+    vertical: Mapped[str] = mapped_column(String(32), default=Vertical.FOOD, index=True)
     status: Mapped[str] = mapped_column(String(32), default=RecordStatus.PUBLISHED, index=True)
 
     locations: Mapped[list["VenueLocation"]] = relationship(back_populates="venue", cascade="all, delete-orphan")

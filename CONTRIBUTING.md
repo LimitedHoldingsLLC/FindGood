@@ -50,6 +50,7 @@ Required coverage when you touch:
 | Ingestion / crawler safety | `tests/unit/test_fetcher_safety.py` |
 | Admin auth | `tests/integration/test_admin_auth.py` |
 | Public consumer API | `tests/contract/test_consumer_api.py` |
+| Vertical defaulting | `tests/unit/test_verticals.py` |
 
 Do not add tests that only assert mocks were called.
 

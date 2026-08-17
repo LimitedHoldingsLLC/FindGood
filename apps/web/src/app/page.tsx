@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { DealCard } from "@/features/deals/DealCard";
 import { FilterBar } from "@/features/discovery/FilterBar";
 import { api } from "@/lib/api/client";
-import type { OfferingKind } from "@/lib/api/types";
+import { FOOD_VERTICAL, type OfferingKind } from "@/lib/api/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       neighborhood: params.neighborhood,
       food_or_drink: offering,
       active_now: params.active_now === "1" || undefined,
+      vertical: FOOD_VERTICAL,
     });
     return (
       <div>

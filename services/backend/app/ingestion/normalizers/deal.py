@@ -40,6 +40,12 @@ DEAL_TYPE_ALIASES = {
     "lunch": "lunch",
     "late night": "late_night",
     "limited time": "limited_time",
+    "percentage off": "percentage_off",
+    "percent off": "percentage_off",
+    "fixed price": "fixed_price",
+    "bogo": "bogo",
+    "buy one get one": "bogo",
+    "introductory": "introductory",
 }
 
 

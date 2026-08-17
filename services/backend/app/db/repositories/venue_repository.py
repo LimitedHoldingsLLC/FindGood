@@ -31,6 +31,7 @@ class VenueRepository:
         city: str | None = None,
         neighborhood: str | None = None,
         category: str | None = None,
+        vertical: str | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[Venue], int]:
@@ -45,6 +46,8 @@ class VenueRepository:
             stmt = stmt.distinct()
         if category:
             stmt = stmt.where(Venue.primary_category == category)
+        if vertical:
+            stmt = stmt.where(Venue.vertical == vertical)
         count_stmt = select(Venue.id)
         if city or neighborhood:
             count_stmt = count_stmt.join(VenueLocation)
@@ -54,6 +57,8 @@ class VenueRepository:
                 count_stmt = count_stmt.where(VenueLocation.neighborhood.ilike(neighborhood))
         if category:
             count_stmt = count_stmt.where(Venue.primary_category == category)
+        if vertical:
+            count_stmt = count_stmt.where(Venue.vertical == vertical)
         count_stmt = count_stmt.where(Venue.status == RecordStatus.PUBLISHED).distinct()
         total = len(list(self.db.scalars(count_stmt)))
         venues = list(self.db.scalars(stmt.order_by(Venue.name).offset(offset).limit(limit)))

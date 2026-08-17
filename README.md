@@ -63,9 +63,9 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -e ".[dev]"
-alembic upgrade head
+python -m alembic upgrade head
 python -m app.db.seed
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 API: http://localhost:8000
@@ -122,9 +122,10 @@ Always use Alembic. Never change production schema by hand.
 
 ```bash
 cd services/backend
-alembic upgrade head
-alembic revision --autogenerate -m "describe the change"
-alembic downgrade -1
+# Use `python -m alembic` so the command runs inside the venv, not a global alembic.exe.
+python -m alembic upgrade head
+python -m alembic revision --autogenerate -m "describe the change"
+python -m alembic downgrade -1
 ```
 
 ## Tests

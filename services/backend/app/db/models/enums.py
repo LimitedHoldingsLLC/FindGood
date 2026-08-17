@@ -1,5 +1,23 @@
 from enum import StrEnum
 
+from app.domain.taxonomy.verticals import Vertical
+
+# Re-export so seed, admin, and models can import taxonomy next to DealType.
+__all__ = [
+    "CandidateReviewStatus",
+    "CandidateType",
+    "CandidateValidationStatus",
+    "CrawlRunStatus",
+    "DealOfferingKind",
+    "DealType",
+    "PublicationState",
+    "RecordStatus",
+    "SourceType",
+    "TrustLevel",
+    "VerificationType",
+    "Vertical",
+]
+
 
 class RecordStatus(StrEnum):
     DRAFT = "draft"
@@ -25,6 +43,10 @@ class DealType(StrEnum):
     LUNCH = "lunch"
     LATE_NIGHT = "late_night"
     LIMITED_TIME = "limited_time"
+    PERCENTAGE_OFF = "percentage_off"
+    FIXED_PRICE = "fixed_price"
+    BOGO = "bogo"
+    INTRODUCTORY = "introductory"
     OTHER = "other"
 
 
@@ -41,6 +63,11 @@ class SourceType(StrEnum):
     RESTAURANT_HTML_MENU = "restaurant_html_menu"
     RESTAURANT_PDF = "restaurant_pdf"
     RESTAURANT_SUBMITTED = "restaurant_submitted"
+    OFFICIAL_WEBSITE = "official_website"
+    OFFICIAL_MENU = "official_menu"
+    MERCHANT_SUBMISSION = "merchant_submission"
+    PARTNER_API = "partner_api"
+    USER_REPORT = "user_report"
     INSTAGRAM = "instagram"
     THIRD_PARTY = "third_party"
 

@@ -281,3 +281,14 @@ WHY: Operators need a normal login form. Consumer accounts are still out of scop
 TRADEOFF: One operator identity from env, not per-person accounts. X-Admin-Key remains for scripts.
 REVERSIBILITY: High. A later user table can implement the same AuthN protocol.
 ```
+
+### Phase 2 — additive vertical (2026-08-16)
+
+```text
+DECISION: Add venues.vertical and deals.vertical, default food. Consumer lists default to food when ?vertical= is omitted.
+OPTIONS: Omit = all verticals / omit = food / require the query param
+RECOMMENDATION: Omit = food; food app also sends vertical=food
+WHY: FindGood.food must not start showing beauty rows when the first non-food business is inserted. Additive field; no table renames.
+TRADEOFF: A future deals app cannot get “all verticals” by omitting the param until we add an explicit all/multi value.
+REVERSIBILITY: High. Alembic downgrade drops the columns. Clients ignore unknown JSON fields.
+```

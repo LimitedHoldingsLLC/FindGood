@@ -21,7 +21,7 @@ A restaurant happy hour stored once in FindGood Core must be able to appear on F
 | Workers | Same codebase, separate Render process | Same until isolation is required |
 | Database | One Postgres | Still one Postgres |
 | Shared JS packages | None | `packages/types` when a second app exists |
-| Vertical filter | None (everything is food in practice) | `vertical=FOOD` vs all verticals |
+| Vertical filter | `?vertical=` on `/deals` and `/venues`; omitted defaults to `food` | Multi-vertical / `all` for a deals app |
 
 Do not create empty app shells or Turborepo until a second product is real.
 

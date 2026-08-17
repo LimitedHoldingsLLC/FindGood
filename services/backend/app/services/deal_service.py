@@ -9,6 +9,7 @@ from app.core.feature_flags import FeatureFlags
 from app.db.models import Source
 from app.db.repositories.deal_repository import DealRepository
 from app.domain.schedules.engine import AvailabilityStatus
+from app.domain.taxonomy.verticals import resolve_consumer_vertical
 from app.services.presenters import present_deal, utcnow
 
 
@@ -26,6 +27,7 @@ class DealService:
         category: str | None = None,
         offering_kind: str | None = None,
         deal_type: str | None = None,
+        vertical: str | None = None,
         max_price: Decimal | None = None,
         latitude: Decimal | None = None,
         longitude: Decimal | None = None,
@@ -49,6 +51,7 @@ class DealService:
             category=category,
             offering_kind=offering_kind,
             deal_type=deal_type,
+            vertical=resolve_consumer_vertical(vertical),
             max_price=max_price,
             latitude=latitude,
             longitude=longitude,

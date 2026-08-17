@@ -38,6 +38,7 @@ class DealRepository:
         category: str | None = None,
         offering_kind: str | None = None,
         deal_type: str | None = None,
+        vertical: str | None = None,
         max_price: Decimal | None = None,
         latitude: Decimal | None = None,
         longitude: Decimal | None = None,
@@ -69,6 +70,8 @@ class DealRepository:
                 stmt = stmt.where(Deal.offering_kind.in_([offering_kind, "both"]))
         if deal_type:
             stmt = stmt.where(Deal.deal_type == deal_type)
+        if vertical:
+            stmt = stmt.where(Deal.vertical == vertical)
         if max_price is not None:
             stmt = stmt.where(Deal.id.in_(select(DealItem.deal_id).where(DealItem.deal_price <= max_price)))
         if latitude is not None and longitude is not None and radius_km:

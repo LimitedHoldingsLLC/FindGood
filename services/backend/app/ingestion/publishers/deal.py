@@ -52,8 +52,8 @@ class DealPublisher:
             location_id = UUID(payload["venue_location_id"])
         if location_id is None:
             raise ValidationFailed("Candidate is missing a venue location")
-        self.venues.get_location(location_id)
-
+        location = self.venues.get_location(location_id)
+        venue = self.venues.get(location.venue_id)
         deal = Deal(
             id=new_id(),
             venue_location_id=location_id,
@@ -61,6 +61,7 @@ class DealPublisher:
             description=payload.get("description"),
             deal_type=payload.get("deal_type") or "other",
             offering_kind=payload.get("offering_kind") or "both",
+            vertical=payload.get("vertical") or venue.vertical,
             status=RecordStatus.PUBLISHED,
             publication_state=PublicationState.PUBLISHED,
             source_confidence=candidate.confidence,

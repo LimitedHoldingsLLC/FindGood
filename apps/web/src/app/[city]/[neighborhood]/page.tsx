@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { DealCard } from "@/features/deals/DealCard";
 import { api } from "@/lib/api/client";
+import { FOOD_VERTICAL } from "@/lib/api/types";
 import { titleCaseSlug } from "@/lib/format";
 import { NEIGHBORHOODS } from "@/lib/location";
 
@@ -26,7 +27,7 @@ export default async function NeighborhoodPage({ params }: Props) {
   if (city !== "los-angeles") notFound();
   const hood = titleCaseSlug(neighborhood);
   if (!NEIGHBORHOODS.includes(hood)) notFound();
-  const deals = await api.listDeals({ city: "Los Angeles", neighborhood: hood });
+  const deals = await api.listDeals({ city: "Los Angeles", neighborhood: hood, vertical: FOOD_VERTICAL });
   return (
     <div>
       <p className="text-sm uppercase tracking-[0.2em] text-muted">Los Angeles</p>

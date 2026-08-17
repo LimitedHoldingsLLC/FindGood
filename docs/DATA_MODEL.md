@@ -13,7 +13,7 @@ Money is `Numeric` / `Decimal`. Coordinates are real columns. Schema changes go 
 ```text
 Venue                              # business identity
   └── VenueLocation                # address, city, neighborhood, lat/lng, timezone
-        └── Deal                   # offer (type, offering_kind, publication_state)
+        └── Deal                   # offer (type, offering_kind, vertical, publication_state)
               ├── DealSchedule     # ISO weekdays, start/end, valid_from/until
               ├── DealItem         # priced line (normal_price, deal_price)
               └── DealPublication  # provenance link
@@ -38,9 +38,8 @@ Manually created admin deals still get a publication row (and usually a `manual`
 | `name`, `slug` | Identity. Slug is unique. |
 | `website_url`, `phone` | Business-level contact. Location-specific phone/site is not shipped. |
 | `primary_category` | Free string. Seed uses `gastropub`, `mexican`, `seafood`, `cafe`, `bar`. Default in admin create is `restaurant`. |
+| `vertical` | Controlled taxonomy. Default `food`. Consumer list endpoints default to `food` when the query param is omitted. |
 | `status` | `draft` / `published` / `archived` / `disabled` |
-
-There is **no** `vertical` column yet. Every current row is food in practice.
 
 ### VenueLocation
 
@@ -55,6 +54,7 @@ A venue may have many locations. Today every deal attaches to **exactly one** lo
 | `venue_location_id` | Required. Offer scope is location-only. |
 | `deal_type` | Food-centric enum: `happy_hour`, `food_special`, `drink_special`, `prix_fixe`, `oyster`, `taco_night`, `brunch`, `lunch`, `late_night`, `limited_time`, `other` |
 | `offering_kind` | `food` / `drink` / `both` |
+| `vertical` | Same taxonomy as venues. Default `food`. Inherited from the venue on ingest publish when the candidate omits it. |
 | `status` | Record lifecycle |
 | `publication_state` | `unpublished` / `published` / `withdrawn` — consumer lists only published + published venue/location |
 | `source_confidence` | `Numeric(4,3)` |
@@ -89,9 +89,9 @@ Freshness labels are derived in `domain/verification/freshness.py` (today / 1 da
 
 ## Indexes that exist
 
-- Venue slug, status, `primary_category`
+- Venue slug, status, `primary_category`, `vertical`
 - Location venue, city, neighborhood, status, `(latitude, longitude)`
-- Deal location, `(status, publication_state)`, `deal_type`, `offering_kind`
+- Deal location, `(status, publication_state)`, `deal_type`, `offering_kind`, `vertical`, `(vertical, status, publication_state)`
 - Source venue, `(is_active, crawl_enabled)`, unique `canonical_identity`
 - Snapshot source, content hash
 - Candidate snapshot, review, validation
@@ -99,11 +99,8 @@ Freshness labels are derived in `domain/verification/freshness.py` (today / 1 da
 
 ## Planned additive columns (not shipped)
 
-Do not implement these in Phase 1. When they land, they must be nullable or defaulted so FindGood.food keeps working.
-
 | Change | Purpose |
 | --- | --- |
-| `venues.vertical`, `deals.vertical` default `food` | Let food query `FOOD` and deals query many verticals |
 | `deals.scope` + nullable `deals.venue_id` | Business-wide or multi-location offers |
 | `transaction_destinations` | Order / reserve / book URLs; no provider columns on `venues` |
 | `clicks` / `conversions` | Attribution |

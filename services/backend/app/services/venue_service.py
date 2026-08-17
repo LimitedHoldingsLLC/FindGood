@@ -7,6 +7,7 @@ from app.api.schemas import Pagination, VenueListOut, VenueOut
 from app.core.feature_flags import FeatureFlags
 from app.db.repositories.deal_repository import DealRepository
 from app.db.repositories.venue_repository import VenueRepository
+from app.domain.taxonomy.verticals import resolve_consumer_vertical
 from app.services.presenters import present_deal, present_venue, utcnow
 
 
@@ -22,6 +23,7 @@ class VenueService:
         city: str | None = None,
         neighborhood: str | None = None,
         category: str | None = None,
+        vertical: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> VenueListOut:
@@ -31,6 +33,7 @@ class VenueService:
             city=city,
             neighborhood=neighborhood,
             category=category,
+            vertical=resolve_consumer_vertical(vertical),
             offset=(page - 1) * page_size,
             limit=page_size,
         )

@@ -10,6 +10,20 @@ export type AvailabilityStatus =
 
 export type OfferingKind = "food" | "drink" | "both";
 
+export type Vertical =
+  | "food"
+  | "beauty"
+  | "fitness"
+  | "entertainment"
+  | "activities"
+  | "retail"
+  | "services"
+  | "health"
+  | "travel"
+  | "other";
+
+export const FOOD_VERTICAL: Vertical = "food";
+
 export interface Pagination {
   page: number;
   page_size: number;
@@ -69,6 +83,7 @@ export interface VenueCard {
   name: string;
   slug: string;
   primary_category: string;
+  vertical: Vertical;
   neighborhood: string | null;
   city: string;
   timezone: string;
@@ -99,6 +114,7 @@ export interface Deal {
   description: string | null;
   deal_type: string;
   offering_kind: OfferingKind;
+  vertical: Vertical;
   source_confidence: string;
   venue: VenueCard;
   location: Location;
@@ -119,6 +135,7 @@ export interface Venue {
   website_url: string | null;
   phone: string | null;
   primary_category: string;
+  vertical: Vertical;
   status: string;
   locations: Location[];
   current_deals: Deal[];
@@ -196,6 +213,7 @@ export interface DealQuery {
   longitude?: string;
   radius?: string;
   active_now?: boolean;
+  vertical?: Vertical;
   page?: number;
   page_size?: number;
 }

@@ -6,10 +6,10 @@ FindGood.food is the first vertical (food and drink specials). This checklist is
 
 ## Target sequence
 
-1. **Taxonomy** — add or reuse a `vertical` value (`FOOD`, `BEAUTY`, …) and categories. Later: additive columns defaulting existing rows to `food`. Today: `primary_category` is a free string; there is no vertical filter.
+1. **Taxonomy** — `vertical` column on venues and deals. Values: `food`, `beauty`, `fitness`, `entertainment`, `activities`, `retail`, `services`, `health`, `travel`, `other`. Default `food`. Consumer lists omit or pass `?vertical=food`.
 2. **Ingestion** — add adapters only if this vertical has a new source shape. Reuse Source / Snapshot / Candidate / Publish. Do not copy the pipeline.
-3. **Consumer app** — later: `apps/<vertical>` with its own UX, domain, and SEO. Today: do not create an empty app. Filter in `apps/web` or wait until the product is real.
-4. **Query** — later: `GET /api/v1/deals?vertical=BEAUTY` (or `/offers`). Today: `GET /api/v1/deals` with `city`, `neighborhood`, `food_or_drink`, `deal_type`, `active_now`.
+3. **Consumer app** — later: `apps/<vertical>` with its own UX, domain, and SEO. Today: FindGood.food (`apps/web`) sends `vertical=food`.
+4. **Query** — `GET /api/v1/deals?vertical=food` (omitted also means food). A future deals app can pass another value or, later, an `all` mode.
 5. **Domain** — later: Vercel project + `NEXT_PUBLIC_*` for that app. Canonical host must not duplicate findgood.food URLs blindly.
 6. **Analytics** — emit the shared event names with `app` and `vertical` properties. Adapter already exists; persistence does not.
 7. **Deploy** — independent Vercel project; same Render API and database.
@@ -46,14 +46,10 @@ A beauty vertical should add its own offer types (for example `introductory_offe
 
 ## First vertical that is not food
 
-Do this, in order, when the product is real:
-
-1. Ship Phase 2: additive `vertical` on venues and deals, default `food`, optional `?vertical=` on existing list endpoints.
-2. Seed or ingest one non-food business in the **same** database.
-3. Confirm FindGood.food with no `vertical` param (or `vertical=food`) still returns only food.
+1. Insert or ingest a non-food business in the **same** database with `vertical=beauty` (or the new value).
+2. Confirm FindGood.food with no `vertical` param and with `vertical=food` still returns only food.
+3. Confirm `?vertical=beauty` returns the new row.
 4. Then consider `apps/deals` or `apps/beauty`.
-
-Until step 1 exists, do not launch a second domain that reads a forked catalog.
 
 ## Contract
 

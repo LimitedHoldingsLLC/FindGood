@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import deal_service_dep
 from app.api.schemas import DealListOut, DealOut
+from app.domain.taxonomy.verticals import Vertical
 from app.services.deal_service import DealService
 
 router = APIRouter(prefix="/api/v1/deals", tags=["deals"])
@@ -17,6 +18,7 @@ def list_deals(
     category: str | None = None,
     offering_kind: str | None = Query(default=None, alias="food_or_drink"),
     deal_type: str | None = None,
+    vertical: Vertical | None = None,
     max_price: Decimal | None = None,
     latitude: Decimal | None = None,
     longitude: Decimal | None = None,
@@ -32,6 +34,7 @@ def list_deals(
         category=category,
         offering_kind=offering_kind,
         deal_type=deal_type,
+        vertical=vertical.value if vertical else None,
         max_price=max_price,
         latitude=latitude,
         longitude=longitude,

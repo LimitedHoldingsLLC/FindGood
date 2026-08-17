@@ -63,7 +63,7 @@ export const api = {
   getDeal(id: string): Promise<Deal> {
     return request(`/api/v1/deals/${id}`);
   },
-  listVenues(query: { city?: string; neighborhood?: string; page?: number } = {}): Promise<VenueList> {
+  listVenues(query: { city?: string; neighborhood?: string; category?: string; vertical?: string; page?: number } = {}): Promise<VenueList> {
     return request(`/api/v1/venues${queryString(query)}`);
   },
   getVenue(slug: string): Promise<Venue> {

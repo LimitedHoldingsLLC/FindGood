@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date, time
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -8,7 +10,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from app.db.models.enums import DealOfferingKind, DealType, PublicationState, RecordStatus
+from app.db.models.enums import DealOfferingKind, DealType, PublicationState, RecordStatus, Vertical
 
 if TYPE_CHECKING:
     from app.db.models.source import ExtractionCandidate, SourceSnapshot
@@ -23,14 +25,15 @@ class Deal(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     deal_type: Mapped[str] = mapped_column(String(40), default=DealType.OTHER, index=True)
     offering_kind: Mapped[str] = mapped_column(String(16), default=DealOfferingKind.BOTH, index=True)
+    vertical: Mapped[str] = mapped_column(String(32), default=Vertical.FOOD, index=True)
     status: Mapped[str] = mapped_column(String(32), default=RecordStatus.PUBLISHED, index=True)
     publication_state: Mapped[str] = mapped_column(String(32), default=PublicationState.UNPUBLISHED, index=True)
     source_confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3), default=Decimal("0.500"))
 
     venue_location: Mapped[VenueLocation] = relationship(back_populates="deals")
-    schedules: Mapped[list["DealSchedule"]] = relationship(back_populates="deal", cascade="all, delete-orphan")
-    items: Mapped[list["DealItem"]] = relationship(back_populates="deal", cascade="all, delete-orphan")
-    publications: Mapped[list["DealPublication"]] = relationship(back_populates="deal")
+    schedules: Mapped[list[DealSchedule]] = relationship(back_populates="deal", cascade="all, delete-orphan")
+    items: Mapped[list[DealItem]] = relationship(back_populates="deal", cascade="all, delete-orphan")
+    publications: Mapped[list[DealPublication]] = relationship(back_populates="deal")
 
 
 class DealSchedule(UUIDPrimaryKeyMixin, TimestampMixin, Base):

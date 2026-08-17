@@ -66,6 +66,7 @@ class AdminService:
             website_url=payload.website_url,
             phone=payload.phone,
             primary_category=payload.primary_category,
+            vertical=payload.vertical,
             status=payload.status,
         )
         self.venues.add(venue)
@@ -108,6 +109,7 @@ class AdminService:
             description=payload.description,
             deal_type=payload.deal_type,
             offering_kind=payload.offering_kind,
+            vertical=payload.vertical,
             status=payload.status,
             publication_state=payload.publication_state,
             source_confidence=payload.source_confidence,

@@ -12,6 +12,7 @@ from app.db.models.enums import (
     SourceType,
     TrustLevel,
     VerificationType,
+    Vertical,
 )
 from app.db.models.source import ExtractionCandidate, Source, SourceSnapshot
 from app.db.models.venue import Venue, VenueLocation
@@ -40,4 +41,5 @@ __all__ = [
     "VenueLocation",
     "Verification",
     "VerificationType",
+    "Vertical",
 ]

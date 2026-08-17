@@ -175,6 +175,7 @@ def _venues() -> list[Venue]:
             website_url=spec["website_url"],
             phone=spec["phone"],
             primary_category=spec["category"],
+            vertical="food",
             status=RecordStatus.PUBLISHED,
         )
         venue.locations.append(
@@ -238,6 +239,7 @@ def _catalog(venues: list[Venue]):
             description=description,
             deal_type=deal_type,
             offering_kind=offering_kind,
+            vertical=venue.vertical,
             status=RecordStatus.PUBLISHED,
             publication_state=publication_state,
             source_confidence=Decimal("0.900"),

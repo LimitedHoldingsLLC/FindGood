@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { DealCard } from "@/features/deals/DealCard";
 import { FilterBar } from "@/features/discovery/FilterBar";
 import { api } from "@/lib/api/client";
+import { FOOD_VERTICAL } from "@/lib/api/types";
 import { titleCaseSlug } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export default async function CityPage({ params, searchParams }: Props) {
     neighborhood: query.neighborhood,
     food_or_drink: query.offering as "food" | "drink" | "both" | undefined,
     active_now: query.active_now === "1" || undefined,
+    vertical: FOOD_VERTICAL,
   });
   return (
     <div>

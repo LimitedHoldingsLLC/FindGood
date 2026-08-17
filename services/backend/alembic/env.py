@@ -15,7 +15,26 @@ config.set_main_option("sqlalchemy.url", get_settings().database_url)
 target_metadata = Base.metadata
 
 
+def _require_psycopg() -> None:
+    """Fail with a venv hint instead of a raw ModuleNotFoundError.
+
+    `alembic` on PATH is often a global install that does not have project deps.
+    """
+    try:
+        import psycopg  # noqa: F401
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "psycopg is not installed in this Python, so Alembic cannot talk to Postgres.\n"
+            "Use the project virtualenv (do not run the global alembic.exe):\n"
+            "  cd services\\backend\n"
+            "  .venv\\Scripts\\activate\n"
+            "  pip install -e \".[dev]\"\n"
+            "  python -m alembic upgrade head\n"
+        ) from exc
+
+
 def run_migrations_offline() -> None:
+    _require_psycopg()
     context.configure(
         url=get_settings().database_url,
         target_metadata=target_metadata,
@@ -28,6 +47,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    _require_psycopg()
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
