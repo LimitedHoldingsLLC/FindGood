@@ -4,15 +4,15 @@ import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { DealCard } from "@/features/deals/DealCard";
 import { FilterBar } from "@/features/discovery/FilterBar";
+import { dealQueryFromSearch, filterStateFromSearch, type DiscoverySearch } from "@/features/discovery/query";
 import { api } from "@/lib/api/client";
-import { FOOD_VERTICAL } from "@/lib/api/types";
 import { titleCaseSlug } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 const ALLOWED = new Set(["los-angeles"]);
 
-type Props = { params: Promise<{ city: string }>; searchParams: Promise<{ neighborhood?: string; active_now?: string; offering?: string }> };
+type Props = { params: Promise<{ city: string }>; searchParams: Promise<DiscoverySearch> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city } = await params;
@@ -30,24 +30,13 @@ export default async function CityPage({ params, searchParams }: Props) {
   if (!ALLOWED.has(city)) notFound();
   const query = await searchParams;
   const cityName = titleCaseSlug(city);
-  const deals = await api.listDeals({
-    city: cityName,
-    neighborhood: query.neighborhood,
-    food_or_drink: query.offering as "food" | "drink" | "both" | undefined,
-    active_now: query.active_now === "1" || undefined,
-    vertical: FOOD_VERTICAL,
-  });
+  const deals = await api.listDeals(dealQueryFromSearch(query, cityName));
   return (
     <div>
       <h1 className="font-display text-5xl">{cityName}</h1>
       <p className="mt-3 text-muted">What’s good in {cityName} right now.</p>
       <div className="mt-6">
-        <FilterBar
-          city={cityName}
-          neighborhood={query.neighborhood}
-          activeNow={query.active_now === "1"}
-          offering={query.offering}
-        />
+        <FilterBar city={cityName} state={filterStateFromSearch(query)} />
       </div>
       {deals.items.length === 0 ? (
         <div className="mt-10">

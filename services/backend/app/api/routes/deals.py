@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import deal_service_dep
 from app.api.schemas import DealListOut, DealOut
+from app.domain.taxonomy.discovery import Cuisine, DrinkKind, TimeBucket, VenueFeature
 from app.domain.taxonomy.verticals import Vertical
 from app.services.deal_service import DealService
 
@@ -24,6 +25,14 @@ def list_deals(
     longitude: Decimal | None = None,
     radius_km: float | None = Query(default=None, alias="radius"),
     active_now: bool | None = None,
+    q: str | None = Query(default=None, max_length=120),
+    cuisine: Cuisine | None = None,
+    price_level: int | None = Query(default=None, ge=1, le=4),
+    drink: DrinkKind | None = None,
+    reservations: bool | None = None,
+    feature: VenueFeature | None = None,
+    when: TimeBucket | None = None,
+    day: int | None = Query(default=None, ge=1, le=7),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
     service: DealService = Depends(deal_service_dep),
@@ -40,6 +49,14 @@ def list_deals(
         longitude=longitude,
         radius_km=radius_km,
         active_now=active_now,
+        q=q,
+        cuisine=cuisine.value if cuisine else None,
+        price_level=price_level,
+        drink_kind=drink.value if drink else None,
+        accepts_reservations=reservations,
+        feature=feature.value if feature else None,
+        when=when,
+        weekday=day,
         page=page,
         page_size=page_size,
     )

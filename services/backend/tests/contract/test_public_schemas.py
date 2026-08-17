@@ -98,3 +98,9 @@ def test_deal_list_keeps_food_or_drink_alias() -> None:
 
 def test_deal_list_accepts_vertical_query() -> None:
     assert "vertical" in inspect.signature(list_deals).parameters
+
+
+def test_deal_list_accepts_discovery_filters() -> None:
+    params = inspect.signature(list_deals).parameters
+    for name in ("q", "cuisine", "price_level", "drink", "reservations", "feature", "when", "day"):
+        assert name in params

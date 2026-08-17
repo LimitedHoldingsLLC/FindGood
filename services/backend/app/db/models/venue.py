@@ -3,7 +3,8 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -23,6 +24,11 @@ class Venue(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     website_url: Mapped[str | None] = mapped_column(String(500))
     phone: Mapped[str | None] = mapped_column(String(40))
     primary_category: Mapped[str] = mapped_column(String(80), default="restaurant", index=True)
+    cuisines: Mapped[list[str]] = mapped_column(ARRAY(String(40)), default=list)
+    price_level: Mapped[int | None] = mapped_column(Integer, index=True)
+    drink_kinds: Mapped[list[str]] = mapped_column(ARRAY(String(40)), default=list)
+    accepts_reservations: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    features: Mapped[list[str]] = mapped_column(ARRAY(String(40)), default=list)
     vertical: Mapped[str] = mapped_column(String(32), default=Vertical.FOOD, index=True)
     status: Mapped[str] = mapped_column(String(32), default=RecordStatus.PUBLISHED, index=True)
     first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

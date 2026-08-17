@@ -83,6 +83,11 @@ class VenueCardOut(APIModel):
     neighborhood: str | None
     city: str
     timezone: str
+    cuisines: list[str] = Field(default_factory=list)
+    price_level: int | None = None
+    drink_kinds: list[str] = Field(default_factory=list)
+    accepts_reservations: bool = False
+    features: list[str] = Field(default_factory=list)
 
 
 class DealOut(APIModel):
@@ -131,6 +136,11 @@ class VenueOut(APIModel):
     primary_category: str
     vertical: str
     status: str
+    cuisines: list[str] = Field(default_factory=list)
+    price_level: int | None = None
+    drink_kinds: list[str] = Field(default_factory=list)
+    accepts_reservations: bool = False
+    features: list[str] = Field(default_factory=list)
     locations: list[LocationOut]
     current_deals: list[DealOut] = Field(default_factory=list)
     upcoming_deals: list[DealOut] = Field(default_factory=list)
@@ -169,6 +179,11 @@ class VenueCreateIn(APIModel):
     primary_category: str = "restaurant"
     vertical: str = "food"
     status: str = "published"
+    cuisines: list[str] = Field(default_factory=list)
+    price_level: int | None = None
+    drink_kinds: list[str] = Field(default_factory=list)
+    accepts_reservations: bool = False
+    features: list[str] = Field(default_factory=list)
 
 
 class VenueUpdateIn(APIModel):
@@ -179,6 +194,11 @@ class VenueUpdateIn(APIModel):
     primary_category: str | None = None
     vertical: str | None = None
     status: str | None = None
+    cuisines: list[str] | None = None
+    price_level: int | None = None
+    drink_kinds: list[str] | None = None
+    accepts_reservations: bool | None = None
+    features: list[str] | None = None
 
 
 class LocationCreateIn(APIModel):

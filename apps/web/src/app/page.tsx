@@ -4,28 +4,15 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { DealCard } from "@/features/deals/DealCard";
 import { FilterBar } from "@/features/discovery/FilterBar";
+import { dealQueryFromSearch, filterStateFromSearch, type DiscoverySearch } from "@/features/discovery/query";
 import { api } from "@/lib/api/client";
-import { FOOD_VERTICAL, type OfferingKind } from "@/lib/api/types";
 
 export const dynamic = "force-dynamic";
 
-type Search = {
-  neighborhood?: string;
-  active_now?: string;
-  offering?: string;
-};
-
-export default async function HomePage({ searchParams }: { searchParams: Promise<Search> }) {
+export default async function HomePage({ searchParams }: { searchParams: Promise<DiscoverySearch> }) {
   const params = await searchParams;
-  const offering = params.offering as OfferingKind | undefined;
   try {
-    const deals = await api.listDeals({
-      city: "Los Angeles",
-      neighborhood: params.neighborhood,
-      food_or_drink: offering,
-      active_now: params.active_now === "1" || undefined,
-      vertical: FOOD_VERTICAL,
-    });
+    const deals = await api.listDeals(dealQueryFromSearch(params, "Los Angeles"));
     return (
       <div>
         <section className="max-w-3xl pb-10 pt-4">
@@ -35,17 +22,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             Genuinely good food and drink, at unusually good prices, happening around the city right now.
           </p>
         </section>
-        <FilterBar
-          city="Los Angeles"
-          neighborhood={params.neighborhood}
-          activeNow={params.active_now === "1"}
-          offering={params.offering}
-        />
+        <FilterBar city="Los Angeles" state={filterStateFromSearch(params)} />
         {deals.items.length === 0 ? (
           <div className="mt-10">
             <EmptyState
               title="No deals match that filter"
-              body="Try another neighborhood, or look at everything happening in Los Angeles."
+              body="Try another neighborhood, cuisine, or time — or look at everything happening in Los Angeles."
               action={
                 <Link href="/" className="rounded-full bg-ink px-4 py-2 text-sm text-paper">
                   Clear filters

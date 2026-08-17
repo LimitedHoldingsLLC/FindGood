@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatMoney, primaryPrice } from "@/lib/format";
+import { formatMoney, priceLevelLabel, primaryPrice, titleCaseKey } from "@/lib/format";
 
 describe("formatMoney", () => {
   it("formats decimal strings without using floats as source of truth", () => {
@@ -26,5 +26,18 @@ describe("primaryPrice", () => {
     ]);
     expect(result.deal).toBe("$2.00");
     expect(result.savings).toBe("50% off");
+  });
+});
+
+describe("priceLevelLabel", () => {
+  it("renders Yelp-style dollar signs", () => {
+    expect(priceLevelLabel(2)).toBe("$$");
+    expect(priceLevelLabel(null)).toBeNull();
+  });
+});
+
+describe("titleCaseKey", () => {
+  it("turns taxonomy slugs into labels", () => {
+    expect(titleCaseKey("natural_wine")).toBe("Natural Wine");
   });
 });

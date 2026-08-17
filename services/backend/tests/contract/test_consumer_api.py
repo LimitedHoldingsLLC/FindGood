@@ -262,6 +262,51 @@ def test_deal_list_contract_and_locked_filters(client: TestClient) -> None:
     assert accepted.status_code == 200
 
 
+def test_deal_list_discovery_filters(client: TestClient) -> None:
+    """Homepage search and compact filters are additive query params."""
+    seed()
+
+    search = client.get("/api/v1/deals", params={"q": "Harbor"})
+    assert search.status_code == 200
+    assert search.json()["items"]
+    assert all("Harbor" in deal["venue"]["name"] or "Harbor" in deal["title"] for deal in search.json()["items"])
+
+    mexican = client.get("/api/v1/deals", params={"cuisine": "mexican"})
+    assert mexican.status_code == 200
+    assert mexican.json()["items"]
+    assert all(
+        "mexican" in deal["venue"].get("cuisines", []) or deal["venue"]["primary_category"] == "mexican"
+        for deal in mexican.json()["items"]
+    )
+
+    cheap = client.get("/api/v1/deals", params={"price_level": 1})
+    assert cheap.status_code == 200
+    assert cheap.json()["items"]
+    assert all(deal["venue"].get("price_level") == 1 for deal in cheap.json()["items"])
+
+    cocktails = client.get("/api/v1/deals", params={"drink": "cocktails"})
+    assert cocktails.status_code == 200
+    assert cocktails.json()["items"]
+    assert all("cocktails" in deal["venue"].get("drink_kinds", []) for deal in cocktails.json()["items"])
+
+    reserved = client.get("/api/v1/deals", params={"reservations": True})
+    assert reserved.status_code == 200
+    assert reserved.json()["items"]
+    assert all(deal["venue"].get("accepts_reservations") is True for deal in reserved.json()["items"])
+
+    patio = client.get("/api/v1/deals", params={"feature": "patio"})
+    assert patio.status_code == 200
+    assert patio.json()["items"]
+    assert all("patio" in deal["venue"].get("features", []) for deal in patio.json()["items"])
+
+    evening = client.get("/api/v1/deals", params={"when": "evening"})
+    assert evening.status_code == 200
+    assert evening.json()["items"]
+
+    unknown = client.get("/api/v1/deals", params={"cuisine": "not-a-cuisine"})
+    assert unknown.status_code == 422
+
+
 def test_vertical_filter_defaults_to_food(client: TestClient) -> None:
     """Omitted vertical and vertical=food return seed food deals; beauty is empty."""
     seed()

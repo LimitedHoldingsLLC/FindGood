@@ -21,6 +21,15 @@ export function citySlug(city: string): string {
   return city.toLowerCase().replace(/\s+/g, "-");
 }
 
+export function priceLevelLabel(level: number | null | undefined): string | null {
+  if (level == null || level < 1 || level > 4) return null;
+  return "$".repeat(level);
+}
+
+export function titleCaseKey(value: string): string {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export function titleCaseSlug(slug: string): string {
   return slug
     .split("-")

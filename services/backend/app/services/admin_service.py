@@ -68,6 +68,11 @@ class AdminService:
             primary_category=payload.primary_category,
             vertical=payload.vertical,
             status=payload.status,
+            cuisines=payload.cuisines,
+            price_level=payload.price_level,
+            drink_kinds=payload.drink_kinds,
+            accepts_reservations=payload.accepts_reservations,
+            features=payload.features,
         )
         self.venues.add(venue)
         return present_venue(venue, [])

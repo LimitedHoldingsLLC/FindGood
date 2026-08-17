@@ -44,6 +44,11 @@ def venue_card(venue: Venue, location: VenueLocation) -> VenueCardOut:
         neighborhood=location.neighborhood,
         city=location.city,
         timezone=location.timezone,
+        cuisines=list(getattr(venue, "cuisines", None) or []),
+        price_level=getattr(venue, "price_level", None),
+        drink_kinds=list(getattr(venue, "drink_kinds", None) or []),
+        accepts_reservations=bool(getattr(venue, "accepts_reservations", False)),
+        features=list(getattr(venue, "features", None) or []),
     )
 
 
@@ -186,6 +191,11 @@ def present_venue(
         primary_category=venue.primary_category,
         vertical=venue.vertical,
         status=venue.status,
+        cuisines=list(getattr(venue, "cuisines", None) or []),
+        price_level=getattr(venue, "price_level", None),
+        drink_kinds=list(getattr(venue, "drink_kinds", None) or []),
+        accepts_reservations=bool(getattr(venue, "accepts_reservations", False)),
+        features=list(getattr(venue, "features", None) or []),
         locations=[location_out(location) for location in venue.locations],
         current_deals=current,
         upcoming_deals=upcoming,

@@ -87,6 +87,11 @@ export interface VenueCard {
   neighborhood: string | null;
   city: string;
   timezone: string;
+  cuisines?: string[];
+  price_level?: number | null;
+  drink_kinds?: string[];
+  accepts_reservations?: boolean;
+  features?: string[];
 }
 
 export interface Location {
@@ -140,6 +145,11 @@ export interface Venue {
   primary_category: string;
   vertical: Vertical;
   status: string;
+  cuisines?: string[];
+  price_level?: number | null;
+  drink_kinds?: string[];
+  accepts_reservations?: boolean;
+  features?: string[];
   locations: Location[];
   current_deals: Deal[];
   upcoming_deals: Deal[];
@@ -414,6 +424,14 @@ export interface DealQuery {
   longitude?: string;
   radius?: string;
   active_now?: boolean;
+  q?: string;
+  cuisine?: string;
+  price_level?: string;
+  drink?: string;
+  reservations?: boolean;
+  feature?: string;
+  when?: string;
+  day?: string;
   vertical?: Vertical;
   page?: number;
   page_size?: number;

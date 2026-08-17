@@ -2,7 +2,7 @@ from decimal import Decimal
 from math import cos, radians
 from uuid import UUID
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import NotFoundError
@@ -43,6 +43,13 @@ class DealRepository:
         latitude: Decimal | None = None,
         longitude: Decimal | None = None,
         radius_km: float | None = None,
+        q: str | None = None,
+        cuisine: str | None = None,
+        price_level: int | None = None,
+        drink_kind: str | None = None,
+        accepts_reservations: bool | None = None,
+        feature: str | None = None,
+        weekday: int | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[Deal], int]:
@@ -76,6 +83,30 @@ class DealRepository:
             stmt = stmt.where(Deal.deal_type == deal_type)
         if vertical:
             stmt = stmt.where(Deal.vertical == vertical)
+        if q and q.strip():
+            pattern = f"%{q.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    Venue.name.ilike(pattern),
+                    Deal.title.ilike(pattern),
+                    Deal.description.ilike(pattern),
+                    Venue.primary_category.ilike(pattern),
+                    VenueLocation.neighborhood.ilike(pattern),
+                )
+            )
+        if cuisine:
+            stmt = stmt.where(or_(Venue.cuisines.contains([cuisine]), Venue.primary_category == cuisine))
+        if price_level is not None:
+            stmt = stmt.where(Venue.price_level == price_level)
+        if drink_kind:
+            stmt = stmt.where(Venue.drink_kinds.contains([drink_kind]))
+        if accepts_reservations is True:
+            stmt = stmt.where(Venue.accepts_reservations.is_(True))
+        if feature:
+            stmt = stmt.where(Venue.features.contains([feature]))
+        if weekday is not None:
+            weekday_deals = select(DealSchedule.deal_id).where(DealSchedule.days_of_week.contains([weekday]))
+            stmt = stmt.where(Deal.id.in_(weekday_deals))
         if max_price is not None:
             stmt = stmt.where(Deal.id.in_(select(DealItem.deal_id).where(DealItem.deal_price <= max_price)))
         if latitude is not None and longitude is not None and radius_km:

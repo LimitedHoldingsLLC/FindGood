@@ -3,14 +3,18 @@ import { notFound } from "next/navigation";
 
 import { EmptyState } from "@/components/ui/EmptyState";
 import { DealCard } from "@/features/deals/DealCard";
+import { FilterBar } from "@/features/discovery/FilterBar";
+import { dealQueryFromSearch, filterStateFromSearch, type DiscoverySearch } from "@/features/discovery/query";
 import { api } from "@/lib/api/client";
-import { FOOD_VERTICAL } from "@/lib/api/types";
 import { titleCaseSlug } from "@/lib/format";
 import { NEIGHBORHOODS } from "@/lib/location";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ city: string; neighborhood: string }> };
+type Props = {
+  params: Promise<{ city: string; neighborhood: string }>;
+  searchParams: Promise<DiscoverySearch>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city, neighborhood } = await params;
@@ -22,16 +26,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function NeighborhoodPage({ params }: Props) {
+export default async function NeighborhoodPage({ params, searchParams }: Props) {
   const { city, neighborhood } = await params;
   if (city !== "los-angeles") notFound();
   const hood = titleCaseSlug(neighborhood);
   if (!NEIGHBORHOODS.includes(hood)) notFound();
-  const deals = await api.listDeals({ city: "Los Angeles", neighborhood: hood, vertical: FOOD_VERTICAL });
+  const query = await searchParams;
+  const deals = await api.listDeals(dealQueryFromSearch({ ...query, neighborhood: hood }, "Los Angeles"));
   return (
     <div>
       <p className="text-sm uppercase tracking-[0.2em] text-muted">Los Angeles</p>
       <h1 className="mt-2 font-display text-5xl">{hood}</h1>
+      <div className="mt-6">
+        <FilterBar city="Los Angeles" state={filterStateFromSearch({ ...query, neighborhood: hood })} />
+      </div>
       {deals.items.length === 0 ? (
         <div className="mt-10">
           <EmptyState title={`Quiet in ${hood}`} body="No published deals for this neighborhood yet." />

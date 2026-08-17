@@ -45,6 +45,11 @@ Manually created admin deals still get a publication row (and usually a `manual`
 | `name`, `slug` | Identity. Slug is unique. |
 | `website_url`, `phone` | Business-level contact. Location-specific phone/site is not shipped. |
 | `primary_category` | Free string. Seed uses `gastropub`, `mexican`, `seafood`, `cafe`, `bar`. Default in admin create is `restaurant`. |
+| `cuisines` | Controlled taxonomy array (`mexican`, `seafood`, …). Consumer `?cuisine=` matches this or `primary_category`. |
+| `price_level` | 1–4 venue price band (`$`–`$$$$`). Not deal-item prices. |
+| `drink_kinds` | Controlled array: `cocktails`, `beer`, `wine`, `natural_wine`, `sake`, `nonalcoholic`. |
+| `accepts_reservations` | Whether the business takes reservations. Booking URLs stay off this table. |
+| `features` | Controlled array: `patio`, `rooftop`, `outdoor`, `late_night`, `good_for_groups`, `walk_in`. |
 | `vertical` | Controlled taxonomy. Default `food`. Consumer list endpoints default to `food` when the query param is omitted. |
 | `status` | `draft` / `published` / `archived` / `disabled` |
 
@@ -96,7 +101,7 @@ Freshness labels are derived in `domain/verification/freshness.py` (today / 1 da
 
 ## Indexes that exist
 
-- Venue slug, status, `primary_category`, `vertical`
+- Venue slug, status, `primary_category`, `vertical`, `price_level`, `accepts_reservations`
 - Location venue, city, neighborhood, status, `(latitude, longitude)`
 - Deal location, `(status, publication_state)`, `deal_type`, `offering_kind`, `vertical`, `(vertical, status, publication_state)`
 - Source venue, `(is_active, crawl_enabled)`, unique `canonical_identity`

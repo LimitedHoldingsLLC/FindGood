@@ -55,6 +55,11 @@ class VenueSpec(TypedDict):
     website_url: str
     phone: str
     category: str
+    cuisines: list[str]
+    price_level: int
+    drink_kinds: list[str]
+    accepts_reservations: bool
+    features: list[str]
     location: LocationSpec
 
 
@@ -63,7 +68,9 @@ def seed() -> None:
     db = SessionLocal()
     try:
         if db.scalar(select(Venue).limit(1)):
-            logger.info("seed_skipped", reason="venues_already_exist")
+            updated = _backfill_discovery(db)
+            db.commit()
+            logger.info("seed_skipped", reason="venues_already_exist", discovery_backfilled=updated)
             return
         venues = _venues()
         db.add_all(venues)
@@ -82,14 +89,19 @@ def seed() -> None:
         db.close()
 
 
-def _venues() -> list[Venue]:
-    specs: list[VenueSpec] = [
+def _venue_specs() -> list[VenueSpec]:
+    return [
         {
             "name": "Harbor & Rye",
             "description": "A fictional downtown gastropub with rye whiskey and a harbor-view bar.",
             "website_url": "https://harborandrye.example",
             "phone": "213-555-0142",
             "category": "gastropub",
+            "cuisines": ["american", "gastropub"],
+            "price_level": 2,
+            "drink_kinds": ["cocktails", "beer", "wine"],
+            "accepts_reservations": True,
+            "features": ["good_for_groups", "walk_in"],
             "location": {
                 "address_line1": "412 S Spring St",
                 "city": "Los Angeles",
@@ -106,6 +118,11 @@ def _venues() -> list[Venue]:
             "website_url": "https://casanube.example",
             "phone": "323-555-0177",
             "category": "mexican",
+            "cuisines": ["mexican"],
+            "price_level": 1,
+            "drink_kinds": ["cocktails", "beer"],
+            "accepts_reservations": False,
+            "features": ["patio", "walk_in"],
             "location": {
                 "address_line1": "2814 Sunset Blvd",
                 "city": "Los Angeles",
@@ -122,6 +139,11 @@ def _venues() -> list[Venue]:
             "website_url": "https://pearlcounter.example",
             "phone": "310-555-0118",
             "category": "seafood",
+            "cuisines": ["seafood"],
+            "price_level": 3,
+            "drink_kinds": ["wine", "cocktails"],
+            "accepts_reservations": True,
+            "features": ["good_for_groups"],
             "location": {
                 "address_line1": "1624 Ocean Ave",
                 "city": "Los Angeles",
@@ -138,6 +160,11 @@ def _venues() -> list[Venue]:
             "website_url": "https://sundayprovisions.example",
             "phone": "323-555-0104",
             "category": "cafe",
+            "cuisines": ["cafe", "american"],
+            "price_level": 2,
+            "drink_kinds": ["nonalcoholic", "wine"],
+            "accepts_reservations": False,
+            "features": ["patio", "walk_in"],
             "location": {
                 "address_line1": "1862 Hillhurst Ave",
                 "city": "Los Angeles",
@@ -154,6 +181,11 @@ def _venues() -> list[Venue]:
             "website_url": "https://nightbirdroom.example",
             "phone": "323-555-0190",
             "category": "bar",
+            "cuisines": ["bar", "american"],
+            "price_level": 2,
+            "drink_kinds": ["cocktails", "beer", "wine"],
+            "accepts_reservations": False,
+            "features": ["late_night", "walk_in"],
             "location": {
                 "address_line1": "1518 Echo Park Ave",
                 "city": "Los Angeles",
@@ -165,8 +197,11 @@ def _venues() -> list[Venue]:
             },
         },
     ]
+
+
+def _venues() -> list[Venue]:
     venues: list[Venue] = []
-    for spec in specs:
+    for spec in _venue_specs():
         venue = Venue(
             id=new_id(),
             name=spec["name"],
@@ -175,6 +210,11 @@ def _venues() -> list[Venue]:
             website_url=spec["website_url"],
             phone=spec["phone"],
             primary_category=spec["category"],
+            cuisines=spec["cuisines"],
+            price_level=spec["price_level"],
+            drink_kinds=spec["drink_kinds"],
+            accepts_reservations=spec["accepts_reservations"],
+            features=spec["features"],
             vertical="food",
             status=RecordStatus.PUBLISHED,
         )
@@ -189,6 +229,25 @@ def _venues() -> list[Venue]:
         )
         venues.append(venue)
     return venues
+
+
+def _backfill_discovery(db) -> int:
+    """Fill discovery columns on existing seed venues so local DBs pick up new filters."""
+    by_name = {spec["name"]: spec for spec in _venue_specs()}
+    updated = 0
+    for venue in db.scalars(select(Venue)):
+        spec = by_name.get(venue.name)
+        if spec is None:
+            continue
+        if venue.cuisines and venue.price_level is not None:
+            continue
+        venue.cuisines = spec["cuisines"]
+        venue.price_level = spec["price_level"]
+        venue.drink_kinds = spec["drink_kinds"]
+        venue.accepts_reservations = spec["accepts_reservations"]
+        venue.features = spec["features"]
+        updated += 1
+    return updated
 
 
 def _catalog(venues: list[Venue]):

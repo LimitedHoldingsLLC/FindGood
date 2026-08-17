@@ -293,6 +293,17 @@ TRADEOFF: Public routes still say /venues and /deals. Admin UI uses “business/
 REVERSIBILITY: High. New tables drop in 0003 downgrade. Additive columns on venues/deals are nullable or defaulted.
 ```
 
+### Consumer discovery filters (2026-08-17)
+
+```text
+DECISION: Compact popover buttons on the food home. Facets live on Venue; time-of-day uses DealSchedule in the location timezone. Search is ?q=.
+OPTIONS: Keep every chip visible / sidebar / venue JSON blob / additive venue columns + schedule domain
+RECOMMENDATION: Additive venue columns + schedule window matching
+WHY: Neighborhoods already overflow the chip row. Cuisine, price, drinks, and reservations describe the business, not one offer. Schedule math already exists and must stay off UTC.
+TRADEOFF: Reservation *availability* is not live inventory — only “takes reservations.” Booking links stay for transaction_destinations later.
+REVERSIBILITY: High. 0004 downgrade drops the columns. New query params are additive.
+```
+
 ### Phase 2 — additive vertical (2026-08-16)
 
 ```text
