@@ -16,6 +16,7 @@ This repository is a **modular monolith**: one FastAPI backend, independently ru
 ```
 apps/web/                 Next.js consumer + admin UI (Vercel)
 services/backend/         FastAPI API, domain, ingestion, workers (Render)
+docs/                     Platform architecture, data model, ingestion, deploy
 scripts/                  Local developer helpers
 .cursor/rules/            Instructions for AI coding agents
 ```
@@ -34,7 +35,7 @@ scripts/                  Local developer helpers
 | `services/backend/app/workers` | Queue abstraction and job runners |
 | `services/backend/app/adapters` | External-system boundaries (maps, analytics) |
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) before changing structure.
+See [ARCHITECTURE.md](ARCHITECTURE.md) before changing structure. Platform intent and vertical rules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Local setup
 
@@ -88,7 +89,7 @@ npm run dev
 ```
 
 App: http://localhost:3000
-Admin: http://localhost:3000/admin (use `ADMIN_API_KEY` from `.env`)
+Admin: http://localhost:3000/admin (sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`)
 
 ### One-command local stack (optional)
 
@@ -109,6 +110,8 @@ Required for a working local slice:
 
 - `DATABASE_URL`
 - `REDIS_URL` (or `QUEUE_BACKEND=memory` if Redis is down)
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
 - `ADMIN_API_KEY`
 - `CORS_ALLOWED_ORIGINS`
 - `NEXT_PUBLIC_API_BASE_URL`

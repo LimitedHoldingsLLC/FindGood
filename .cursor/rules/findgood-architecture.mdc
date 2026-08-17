@@ -5,7 +5,7 @@ alwaysApply: true
 
 # FindGood agent rules
 
-Inspect `ARCHITECTURE.md` and the owning module before writing code. Search for an existing service, repository, protocol, or component. Do not duplicate behavior.
+Inspect `ARCHITECTURE.md` (and `docs/` for platform / vertical / deploy intent) and the owning module before writing code. Search for an existing service, repository, protocol, or component. Do not duplicate behavior.
 
 ## Ownership
 

@@ -1,3 +1,6 @@
+// Mirrors the public FastAPI contract. Required fields are locked by
+// services/backend/tests/contract/test_consumer_api.py. Additive API fields
+// are allowed; removals or renames must update this file in the same change.
 export type AvailabilityStatus =
   | "active_now"
   | "starts_soon"
@@ -173,6 +176,13 @@ export interface Candidate {
   published_deal_id: string | null;
   confidence: string;
   diagnostic_notes: string | null;
+}
+
+export interface AdminSession {
+  ok: boolean;
+  subject: string;
+  token: string;
+  expires_at: string;
 }
 
 export interface DealQuery {

@@ -3,6 +3,8 @@ import os
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("QUEUE_BACKEND", "memory")
 os.environ.setdefault("ADMIN_API_KEY", "test-admin-key")
+os.environ.setdefault("ADMIN_USERNAME", "admin")
+os.environ.setdefault("ADMIN_PASSWORD", "test-admin-password")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 os.environ.setdefault(
     "DATABASE_URL",
@@ -17,10 +19,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 
 from app.core.config import get_settings, reset_settings_cache
+from app.core.security import reset_login_attempt_guard
 
 
 def postgres_available() -> bool:
     reset_settings_cache()
+    reset_login_attempt_guard()
     settings = get_settings()
     engine = create_engine(
         settings.database_url,

@@ -4,6 +4,21 @@ FindGood is a **modular monolith** with independently runnable workers. One depl
 
 This is intentional. We optimize for a fast MVP *and* for isolated changes. We do not split microservices until a module has an independent scale, failure, or team boundary that the monolith cannot absorb.
 
+**Platform intent:** one FindGood core, many consumer applications. FindGood.food (`apps/web`) is the first interface, not the database. Tables named `venues` and `deals` are the business and offer graph. Do not copy that graph per vertical.
+
+Platform docs (current vs target, data model, ingestion, deploy, adding a vertical) live in [`docs/`](docs/). This file remains the implementation contract for code changes.
+
+## Vocabulary
+
+| Platform | Code / API today | Do not do |
+| --- | --- | --- |
+| Business | `Venue`, `/api/v1/venues` | Rename tables to launch a vertical |
+| Location | `VenueLocation` | Store lat/lng only in JSON |
+| Offer | `Deal`, `/api/v1/deals` | Create `HappyHourRestaurant` |
+| Evidence | Source → Snapshot → Candidate → Publication | Auto-publish crawler output |
+
+Public JSON field names are locked by `services/backend/tests/contract/`. Additive fields are allowed. Renames and removals need an explicit instruction and a food-app update in the same change.
+
 ## High-level diagram
 
 ```
@@ -113,7 +128,7 @@ Crawler output never becomes consumer-facing without step 10.
 ### Adding a crawler adapter
 
 1. Implement `Fetcher` / `Parser` / `Extractor` protocols in `app/ingestion/...`.
-2. Register them in the ingestion registry (one place).
+2. Wire them in one place (`IngestionPipeline` today; a registry when a second real adapter exists).
 3. Do not put extraction logic in a fetcher.
 4. An `LLMExtractor` later implements the same `Extractor` protocol. Do not special-case the pipeline.
 5. Every network fetcher must go through `ingestion/safety.py` (scheme, DNS, private IP, size, timeout, robots).
@@ -136,7 +151,7 @@ Never use the server timezone. Never treat schedule text as a blob.
 
 - Public: `/api/v1/...`
 - Health: `/health`, `/ready` (unversioned, for orchestrators)
-- Admin: `/api/v1/admin/...` (admin key)
+- Admin: `/api/v1/admin/...` (username/password session, or `X-Admin-Key`)
 - Responses are Pydantic schemas. ORM objects never leave the repository layer.
 - Collection endpoints are paginated.
 - Source snapshots are not returned on consumer deal payloads.
@@ -159,7 +174,7 @@ Current flags: `deal_score`, `maps`, `accounts`, `community_verification`, `flas
 
 ## Auth
 
-`core/security.py` defines an `AuthN` boundary. Today it only protects admin. Consumer and restaurant identity can implement the same protocols later. Do not invent a custom identity platform now.
+`core/security.py` defines an `AuthN` boundary. Today it only protects internal admin: operators sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`, receive a signed session token, and call `/api/v1/admin/*` with `Authorization: Bearer`. Password guesses are locked after 5 failures per client in 15 minutes, or 25 failures globally. `ADMIN_API_KEY` signs those tokens and remains valid as `X-Admin-Key` for scripts. Consumer and restaurant identity can implement the same protocols later. Do not invent a custom identity platform now.
 
 ## Deployment details vs application code
 
@@ -240,3 +255,29 @@ New capabilities should be deletable by removing one domain package, its reposit
 ## What this foundation deliberately does not include
 
 Native mobile, ML recommendations, restaurant billing, reservations, POS, nationwide crawling, Kubernetes, event sourcing, GraphQL. Seams exist; implementations do not.
+
+Empty `apps/deals` / `apps/merchant` shells, Turborepo, and Venue→Business table renames are also out until a second product or an explicit migration phase needs them.
+
+## Decision log
+
+### Phase 1 — documentation and consumer API contract lock (2026-08-15)
+
+```text
+DECISION: Freeze FindGood.food’s public API in tests and write platform docs. No schema or folder moves.
+OPTIONS: Rename Venue/Deal now / extract packages now / docs+contract only
+RECOMMENDATION: Docs + contract tests only
+WHY: The working food app is the asset. Venue/Deal already are Business/Offer. Renames and empty apps would break velocity without a second product.
+TRADEOFF: Public routes still say /venues and /deals.
+REVERSIBILITY: High. Docs and tests can be extended when vertical columns land.
+```
+
+### Admin username/password sessions (2026-08-16)
+
+```text
+DECISION: Admin UI signs in with env username/password and a signed session token. No user table.
+OPTIONS: Keep paste-the-API-key / env credentials + HMAC token / full identity platform
+RECOMMENDATION: Env credentials + HMAC token in core/security.py
+WHY: Operators need a normal login form. Consumer accounts are still out of scope. Reuse the existing AuthN boundary.
+TRADEOFF: One operator identity from env, not per-person accounts. X-Admin-Key remains for scripts.
+REVERSIBILITY: High. A later user table can implement the same AuthN protocol.
+```

@@ -1,11 +1,11 @@
 from collections.abc import Generator
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 from app.core.feature_flags import FeatureFlags, flags_from_settings
-from app.core.security import AdminKeyAuth, Principal
+from app.core.security import AdminAuth, Principal, get_login_attempt_guard
 from app.db.session import get_db
 from app.services.admin_service import AdminService
 from app.services.deal_service import DealService
@@ -41,12 +41,36 @@ def queue_dep(settings: Settings = Depends(settings_dep)) -> JobQueue:
     return get_queue(settings.queue_backend, settings.redis_url)
 
 
+def admin_auth_dep(settings: Settings = Depends(settings_dep)) -> AdminAuth:
+    return AdminAuth(
+        username=settings.admin_username,
+        password=settings.admin_password,
+        signing_key=settings.admin_api_key,
+        session_ttl_seconds=settings.admin_session_ttl_seconds,
+        attempt_guard=get_login_attempt_guard(
+            settings.admin_login_max_failures,
+            settings.admin_login_window_seconds,
+            settings.admin_login_lockout_seconds,
+            settings.admin_login_global_max_failures,
+            not settings.is_test,
+        ),
+    )
+
+
+def admin_client_key(request: Request, settings: Settings = Depends(settings_dep)) -> str:
+    if settings.is_production:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()[:128]
+    return request.client.host if request.client else "unknown"
+
+
 def admin_principal(
-    settings: Settings = Depends(settings_dep),
+    auth: AdminAuth = Depends(admin_auth_dep),
     x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
     authorization: str | None = Header(default=None),
 ) -> Principal:
-    presented = x_admin_key
-    if not presented and authorization and authorization.lower().startswith("bearer "):
-        presented = authorization.split(" ", 1)[1]
-    return AdminKeyAuth(settings.admin_api_key).authenticate_admin(presented)
+    bearer: str | None = None
+    if authorization and authorization.lower().startswith("bearer "):
+        bearer = authorization.split(" ", 1)[1]
+    return auth.authenticate_request(bearer_token=bearer, api_key=x_admin_key)

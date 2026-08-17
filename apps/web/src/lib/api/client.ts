@@ -1,4 +1,5 @@
 import type {
+  AdminSession,
   Candidate,
   Deal,
   DealList,
@@ -73,14 +74,16 @@ export const api = {
   },
 };
 
-export function adminApi(key: string) {
-  const headers = { "X-Admin-Key": key };
+export function createAdminSession(username: string, password: string) {
+  return request<AdminSession>("/api/v1/admin/session", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export function adminApi(token: string) {
+  const headers = { Authorization: `Bearer ${token}` };
   return {
-    login: (apiKey: string) =>
-      request<{ ok: boolean }>("/api/v1/admin/session", {
-        method: "POST",
-        body: JSON.stringify({ api_key: apiKey }),
-      }),
     venues: () => request<Venue[]>("/api/v1/admin/venues", { headers }),
     createVenue: (body: object) =>
       request<Venue>("/api/v1/admin/venues", { method: "POST", headers, body: JSON.stringify(body) }),

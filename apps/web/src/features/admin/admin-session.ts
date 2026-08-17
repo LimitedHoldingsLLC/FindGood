@@ -1,14 +1,14 @@
-const KEY = "findgood.adminKey";
+const KEY = "findgood.adminToken";
 
-export function getAdminKey(): string | null {
+export function getAdminToken(): string | null {
   if (typeof window === "undefined") return null;
   return window.sessionStorage.getItem(KEY);
 }
 
-export function setAdminKey(value: string) {
+export function setAdminToken(value: string) {
   window.sessionStorage.setItem(KEY, value);
 }
 
-export function clearAdminKey() {
+export function clearAdminToken() {
   window.sessionStorage.removeItem(KEY);
 }

@@ -49,6 +49,7 @@ Required coverage when you touch:
 | Publishing / provenance | `tests/integration/test_publishing.py` |
 | Ingestion / crawler safety | `tests/unit/test_fetcher_safety.py` |
 | Admin auth | `tests/integration/test_admin_auth.py` |
+| Public consumer API | `tests/contract/test_consumer_api.py` |
 
 Do not add tests that only assert mocks were called.
 
@@ -62,7 +63,7 @@ Do not add tests that only assert mocks were called.
 
 - Use structured log events (`logger.info("source_fetch_failed", source_id=..., crawl_run_id=...)`).
 - Include `request_id` / `crawl_run_id` when available.
-- Never log secrets, raw admin keys, or full raw snapshots at info level.
+- Never log secrets, admin passwords, session tokens, or full raw snapshots at info level.
 - Never swallow exceptions.
 
 ## API changes

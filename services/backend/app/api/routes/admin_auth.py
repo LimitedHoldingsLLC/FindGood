@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Depends
 
-from app.api.dependencies import settings_dep
-from app.api.schemas import AdminSessionIn
-from app.core.config import Settings
-from app.core.security import AdminKeyAuth
+from app.api.dependencies import admin_auth_dep, admin_client_key
+from app.api.schemas import AdminSessionIn, AdminSessionOut
+from app.core.security import AdminAuth
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
 @router.post("/session")
-def admin_session(payload: AdminSessionIn, settings: Settings = Depends(settings_dep)) -> dict:
-    principal = AdminKeyAuth(settings.admin_api_key).authenticate_admin(payload.api_key)
-    return {"ok": True, "subject": principal.subject}
+def admin_session(
+    payload: AdminSessionIn,
+    auth: AdminAuth = Depends(admin_auth_dep),
+    client_key: str = Depends(admin_client_key),
+) -> AdminSessionOut:
+    principal = auth.login(payload.username, payload.password, client_key=client_key)
+    token, expires_at = auth.issue_session(principal)
+    return AdminSessionOut(ok=True, subject=principal.subject, token=token, expires_at=expires_at)

@@ -79,6 +79,7 @@ class VenueCardOut(APIModel):
     name: str
     slug: str
     primary_category: str
+    vertical: str
     neighborhood: str | None
     city: str
     timezone: str
@@ -90,6 +91,7 @@ class DealOut(APIModel):
     description: str | None
     deal_type: str
     offering_kind: str
+    vertical: str
     source_confidence: Decimal
     venue: VenueCardOut
     location: "LocationOut"
@@ -124,6 +126,7 @@ class VenueOut(APIModel):
     website_url: str | None
     phone: str | None
     primary_category: str
+    vertical: str
     status: str
     locations: list[LocationOut]
     current_deals: list[DealOut] = Field(default_factory=list)
@@ -161,6 +164,7 @@ class VenueCreateIn(APIModel):
     website_url: str | None = None
     phone: str | None = None
     primary_category: str = "restaurant"
+    vertical: str = "food"
     status: str = "published"
 
 
@@ -170,6 +174,7 @@ class VenueUpdateIn(APIModel):
     website_url: str | None = None
     phone: str | None = None
     primary_category: str | None = None
+    vertical: str | None = None
     status: str | None = None
 
 
@@ -212,6 +217,7 @@ class DealCreateIn(APIModel):
     description: str | None = None
     deal_type: str = "other"
     offering_kind: str = "both"
+    vertical: str = "food"
     status: str = "published"
     publication_state: str = "published"
     source_confidence: Decimal = Decimal("1.000")
@@ -224,6 +230,7 @@ class DealUpdateIn(APIModel):
     description: str | None = None
     deal_type: str | None = None
     offering_kind: str | None = None
+    vertical: str | None = None
     status: str | None = None
     publication_state: str | None = None
 
@@ -302,7 +309,15 @@ class VerifyIn(APIModel):
 
 
 class AdminSessionIn(APIModel):
-    api_key: str
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class AdminSessionOut(APIModel):
+    ok: bool
+    subject: str
+    token: str
+    expires_at: datetime
 
 
 class JobAcceptedOut(APIModel):

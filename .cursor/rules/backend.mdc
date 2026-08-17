@@ -13,7 +13,7 @@ request → Pydantic schema → app/services → repository → response schema
 - Routes live in `app/api/routes`. They inject dependencies; they do not implement rules.
 - Application services orchestrate. Domain services compute.
 - Repositories hide SQLAlchemy. Do not return ORM models from API routes.
-- Public API is `/api/v1/`. Admin is `/api/v1/admin/` and requires the admin key.
+- Public API is `/api/v1/`. Admin is `/api/v1/admin/` and requires a session token or `X-Admin-Key`.
 - JSON fields are `snake_case`.
 - Paginate collection endpoints. Bound payload sizes.
 - Avoid N+1: load venues, locations, schedules, items, and verifications in repository queries.

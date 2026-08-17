@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 
 import { adminApi } from "@/lib/api/client";
 import type { Candidate, Deal, Snapshot, Source, Venue } from "@/lib/api/types";
-import { getAdminKey } from "@/features/admin/admin-session";
+import { clearAdminToken, getAdminToken } from "@/features/admin/admin-session";
 
 export default function AdminHomePage() {
   const router = useRouter();
-  const [key, setKey] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
@@ -22,27 +22,30 @@ export default function AdminHomePage() {
   const [dealLocationId, setDealLocationId] = useState("");
 
   useEffect(() => {
-    const stored = getAdminKey();
+    const stored = getAdminToken();
     if (!stored) {
       router.replace("/admin/login");
       return;
     }
-    setKey(stored);
+    setToken(stored);
     const client = adminApi(stored);
-    Promise.all([client.venues(), client.deals(), client.sources(), client.candidates()]).then(
-      ([nextVenues, nextDeals, nextSources, nextCandidates]) => {
+    Promise.all([client.venues(), client.deals(), client.sources(), client.candidates()])
+      .then(([nextVenues, nextDeals, nextSources, nextCandidates]) => {
         setVenues(nextVenues);
         setDeals(nextDeals);
         setSources(nextSources);
         setCandidates(nextCandidates);
         const firstLocation = nextVenues[0]?.locations[0]?.id;
         if (firstLocation) setDealLocationId(firstLocation);
-      },
-    );
+      })
+      .catch(() => {
+        clearAdminToken();
+        router.replace("/admin/login");
+      });
   }, [router]);
 
-  if (!key) return <p>Checking admin session…</p>;
-  const client = adminApi(key);
+  if (!token) return <p>Checking admin session…</p>;
+  const client = adminApi(token);
 
   async function refreshAll() {
     const [nextVenues, nextDeals, nextSources, nextCandidates] = await Promise.all([
@@ -59,10 +62,22 @@ export default function AdminHomePage() {
 
   return (
     <div className="space-y-10">
-      <div>
-        <h1 className="font-display text-4xl">Curate</h1>
-        <p className="text-sm text-muted">Reliability over polish. Seed data is fictional.</p>
-        {message ? <p className="mt-2 text-sm text-forest">{message}</p> : null}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-4xl">Curate</h1>
+          <p className="text-sm text-muted">Reliability over polish. Seed data is fictional.</p>
+          {message ? <p className="mt-2 text-sm text-forest">{message}</p> : null}
+        </div>
+        <button
+          className="rounded-full border border-ink/15 px-4 py-2 text-sm"
+          type="button"
+          onClick={() => {
+            clearAdminToken();
+            router.replace("/admin/login");
+          }}
+        >
+          Sign out
+        </button>
       </div>
 
       <section className="rounded-2xl border border-ink/10 bg-card p-5">

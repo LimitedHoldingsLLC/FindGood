@@ -16,7 +16,7 @@ def normalize_database_url(url: str) -> str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=(".env", "../../.env"),
+        env_file=(".env", "../.env", "../../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -36,7 +36,14 @@ class Settings(BaseSettings):
     queue_backend: Literal["redis", "memory"] = "redis"
 
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    admin_username: str = "admin"
+    admin_password: str = "change-me-to-a-strong-admin-password"
     admin_api_key: str = "change-me-to-a-long-random-admin-key"
+    admin_session_ttl_seconds: int = 43_200
+    admin_login_max_failures: int = 5
+    admin_login_window_seconds: int = 900
+    admin_login_lockout_seconds: int = 900
+    admin_login_global_max_failures: int = 25
 
     feature_deal_score: bool = True
     feature_maps: bool = False
