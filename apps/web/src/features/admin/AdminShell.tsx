@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { BrandMark } from "@/components/layout/BrandMark";
 import { adminApi } from "@/lib/api/client";
 import { clearAdminToken, getAdminToken } from "@/features/admin/admin-session";
 
@@ -50,7 +51,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen">
         <aside className="hidden w-56 shrink-0 border-r border-paper/10 bg-ink md:block">
           <div className="px-4 py-5">
-            <p className="font-display text-xl tracking-tight">FindGood</p>
+            <p className="font-display text-xl tracking-tight">
+              <BrandMark accentClassName="text-gold" />
+            </p>
             <p className="text-xs uppercase tracking-widest text-gold">Control plane</p>
           </div>
           <nav className="space-y-0.5 px-2 pb-8">

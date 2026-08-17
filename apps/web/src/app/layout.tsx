@@ -15,17 +15,17 @@ const canonicalHost = process.env.NEXT_PUBLIC_CANONICAL_HOST ?? "findgood.food";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "FindGood — good food and drink deals near you",
-    template: "%s · FindGood",
+    default: "FindGood.Food — good food and drink deals near you",
+    template: "%s · FindGood.Food",
   },
   description: "Find good food and drink deals happening near you.",
   alternates: {
     canonical: `https://${canonicalHost}`,
   },
   openGraph: {
-    title: "FindGood",
+    title: "FindGood.Food",
     description: "What's good near you?",
-    siteName: "FindGood",
+    siteName: "FindGood.Food",
     type: "website",
   },
 };
