@@ -155,6 +155,8 @@ The first fetcher is a deterministic `demo://` adapter. It never hits the public
 5. Approve/publish.
 6. The deal appears on the consumer home page and `/api/v1/deals`.
 
+Admin control plane (crawler, providers, freshness): http://localhost:3000/admin — see [docs/OPERATOR.md](docs/OPERATOR.md).
+
 ## Deployment
 
 - **Frontend:** Vercel project rooted at `apps/web`.

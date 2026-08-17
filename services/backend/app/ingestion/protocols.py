@@ -9,6 +9,10 @@ class FetchResult:
     content_type: str
     content: bytes
     headers: dict[str, str] = field(default_factory=dict)
+    final_url: str | None = None
+    retry_count: int = 0
+    duration_ms: int = 0
+    skipped_reason: str | None = None
 
 
 @dataclass(frozen=True)

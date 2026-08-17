@@ -12,6 +12,12 @@ logger = get_logger("queue")
 
 JOB_SOURCE_REFRESH = "source.refresh"
 JOB_ENQUEUE_STALE = "sources.enqueue_stale"
+JOB_WEBSITE_CRAWL = "website.crawl"
+JOB_PROVIDER_SEARCH = "provider.search"
+JOB_PROVIDER_REFRESH = "provider.refresh"
+JOB_DETECT_STALE = "freshness.detect_stale"
+JOB_EXPIRE_PROMOTIONS = "freshness.expire"
+JOB_QUEUE_STALE_REFRESH = "freshness.queue_refresh"
 
 
 @dataclass
@@ -142,3 +148,7 @@ def enqueue_source_refresh(queue: JobQueue, source_id: str) -> str:
         {"source_id": source_id},
         idempotency_key=f"source.refresh:{source_id}",
     )
+
+
+def enqueue_named(queue: JobQueue, name: str, payload: dict, *, idempotency_key: str | None = None) -> str:
+    return queue.enqueue(name, payload, idempotency_key=idempotency_key)

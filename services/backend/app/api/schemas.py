@@ -102,6 +102,9 @@ class DealOut(APIModel):
     provenance: ProvenanceOut | None = None
     score: DealScoreOut | None = None
     distance_km: float | None = None
+    freshness_status: str | None = None
+    last_seen_at: datetime | None = None
+    last_verified_at: datetime | None = None
 
 
 class LocationOut(APIModel):

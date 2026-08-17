@@ -1,15 +1,17 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Numeric, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from app.db.models.enums import RecordStatus, Vertical
+from app.db.models.enums import FreshnessStatus, RecordStatus, Vertical
 
 if TYPE_CHECKING:
     from app.db.models.deal import Deal
+    from app.db.models.provider_link import VenueProviderLink
 
 
 class Venue(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -23,8 +25,17 @@ class Venue(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     primary_category: Mapped[str] = mapped_column(String(80), default="restaurant", index=True)
     vertical: Mapped[str] = mapped_column(String(32), default=Vertical.FOOD, index=True)
     status: Mapped[str] = mapped_column(String(32), default=RecordStatus.PUBLISHED, index=True)
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_refresh_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    freshness_status: Mapped[str] = mapped_column(String(32), default=FreshnessStatus.UNVERIFIED, index=True)
+    failure_count: Mapped[int] = mapped_column(Integer, default=0)
 
     locations: Mapped[list["VenueLocation"]] = relationship(back_populates="venue", cascade="all, delete-orphan")
+    provider_links: Mapped[list["VenueProviderLink"]] = relationship(
+        back_populates="venue", cascade="all, delete-orphan"
+    )
 
 
 class VenueLocation(UUIDPrimaryKeyMixin, TimestampMixin, Base):

@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { SiteFooter } from "@/components/layout/SiteFooter";
-import { SiteHeader } from "@/components/layout/SiteHeader";
+import { AppChrome } from "@/components/layout/AppChrome";
 
 import "./globals.css";
 
@@ -35,9 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${outfit.variable} ${fraunces.variable}`}>
       <body className={outfit.className}>
-        <SiteHeader />
-        <main className="mx-auto min-h-[70vh] max-w-6xl px-4 py-8">{children}</main>
-        <SiteFooter />
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

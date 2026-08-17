@@ -17,9 +17,11 @@ from app.db.models.enums import (
 from app.db.repositories.source_repository import SourceRepository
 from app.db.repositories.venue_repository import VenueRepository
 from app.ingestion.extractors.demo import DemoExtractor
+from app.ingestion.extractors.html import HtmlOfferExtractor
 from app.ingestion.fetchers.demo import DemoFetcher
 from app.ingestion.fetchers.http import HttpFetcher
 from app.ingestion.normalizers.deal import DealNormalizer
+from app.ingestion.parsers.html_parser import HtmlParser
 from app.ingestion.parsers.json_parser import JsonParser
 from app.ingestion.safety import content_hash
 from app.ingestion.validators.deal import DealValidator
@@ -40,7 +42,9 @@ class IngestionPipeline:
             user_agent=settings.crawler_user_agent,
         )
         self.parser = JsonParser()
+        self.html_parser = HtmlParser()
         self.extractor = DemoExtractor()
+        self.html_extractor = HtmlOfferExtractor()
         self.normalizer = DealNormalizer()
         self.validator = DealValidator()
 
@@ -60,6 +64,14 @@ class IngestionPipeline:
         logger.info("crawl_started", source_id=str(source.id), url=source.url)
         try:
             fetched = self._fetch(source.url, source.source_type)
+            if fetched.skipped_reason == "robots_disallow":
+                run.status = CrawlRunStatus.FAILED
+                run.completed_at = datetime.now(UTC)
+                run.error_category = "robots_disallow"
+                run.error_details = "robots.txt disallows this URL"
+                run.robots_blocked = 1
+                logger.info("crawl_blocked_robots", source_id=str(source.id), url=source.url)
+                return run
             run.fetch_result = "ok"
             snapshot = SourceSnapshot(
                 id=new_id(),
@@ -77,10 +89,9 @@ class IngestionPipeline:
                 extra_metadata={"url": fetched.url},
             )
             self.sources.add_snapshot(snapshot)
-            parsed = self.parser.parse(fetched)
+            parsed, extracted, extractor_version = self._parse_and_extract(fetched)
             snapshot.parser_version = parsed.parser_version
             run.parse_result = "ok"
-            extracted = self.extractor.extract(parsed)
             created = 0
             for item in extracted:
                 normalized = self.normalizer.normalize(item.payload)
@@ -119,7 +130,7 @@ class IngestionPipeline:
                         validation_status=status,
                         validation_errors=errors,
                         review_status=CandidateReviewStatus.PENDING,
-                        extractor_version=self.extractor.version,
+                        extractor_version=extractor_version,
                         confidence=Decimal(str(item.confidence)),
                         diagnostic_notes=item.diagnostic_notes,
                     )
@@ -158,3 +169,12 @@ class IngestionPipeline:
         if url.startswith("demo://") or source_type == SourceType.DEMO:
             return self.demo_fetcher.fetch(url, user_agent=user_agent, timeout_seconds=timeout_seconds)
         return self.http_fetcher.fetch(url, user_agent=user_agent, timeout_seconds=timeout_seconds)
+
+    def _parse_and_extract(self, fetched):
+        content_type = (fetched.content_type or "").split(";")[0].strip().casefold()
+        looks_html = "html" in content_type or (fetched.content or b"").lstrip()[:1] == b"<"
+        if looks_html and not (fetched.url or "").startswith("demo://"):
+            parsed = self.html_parser.parse(fetched)
+            return parsed, self.html_extractor.extract(parsed), self.html_extractor.version
+        parsed = self.parser.parse(fetched)
+        return parsed, self.extractor.extract(parsed), self.extractor.version

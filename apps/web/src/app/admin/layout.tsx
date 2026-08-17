@@ -1,5 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 
+import { AdminShell } from "@/features/admin/AdminShell";
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <div className="pb-16">{children}</div>;
+  return <AdminShell>{children}</AdminShell>;
 }

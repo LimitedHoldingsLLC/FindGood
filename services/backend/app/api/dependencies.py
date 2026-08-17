@@ -9,6 +9,7 @@ from app.core.security import AdminAuth, Principal, get_login_attempt_guard
 from app.db.session import get_db
 from app.services.admin_service import AdminService
 from app.services.deal_service import DealService
+from app.services.ops_service import OpsService
 from app.services.venue_service import VenueService
 from app.workers.queue import JobQueue, get_queue
 
@@ -39,6 +40,15 @@ def admin_service_dep(db: Session = Depends(db_dep), flags: FeatureFlags = Depen
 
 def queue_dep(settings: Settings = Depends(settings_dep)) -> JobQueue:
     return get_queue(settings.queue_backend, settings.redis_url)
+
+
+def ops_service_dep(
+    db: Session = Depends(db_dep),
+    flags: FeatureFlags = Depends(flags_dep),
+    settings: Settings = Depends(settings_dep),
+    queue: JobQueue = Depends(queue_dep),
+) -> OpsService:
+    return OpsService(db, settings, flags, queue)
 
 
 def admin_auth_dep(settings: Settings = Depends(settings_dep)) -> AdminAuth:

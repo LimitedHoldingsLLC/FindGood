@@ -45,13 +45,23 @@ An LLM extractor later implements the same `Extractor` protocol. Do not fork the
 | Adapter | Behavior |
 | --- | --- |
 | `DemoFetcher` | Reads in-repo JSON fixtures for `demo://…` URLs. Never hits the internet. |
-| `HttpFetcher` | Public HTTP(S) GET with size/timeout caps. Must pass `safety.assert_public_http_url`. |
-| `JsonParser` | Parses JSON documents only. |
-| `DemoExtractor` | Maps demo fixture shapes to deal candidates. |
+| `HttpFetcher` | Public HTTP(S) GET with size/timeout caps, retries, validated redirects, robots.txt, per-domain rate limits. |
+| `JsonParser` / `HtmlParser` | JSON documents or HTML pages. |
+| `DemoExtractor` / `HtmlOfferExtractor` | Demo fixtures, or JSON-LD + heuristic happy-hour text. |
+| `GooglePlacesAdapter` | Places API (New) text search and place details. Identity only, not offers. |
+| `YelpAdapter` | Yelp Fusion search and business details. Identity only. |
+| `OpenTableAdapter` | Explicitly not configured until an authorized partner feed exists. |
 | `DealNormalizer` / `DealValidator` | Title, schedule, money, confidence. |
 | `DealPublisher` | Admin approve path. Requires a `venue_location_id`. |
+| `IngestionOrchestrator` | Provider search + website crawls + run tracking. |
 
-`IngestionPipeline` currently **constructs these adapters directly**. Root `ARCHITECTURE.md` mentions a registry; that registry is not shipped. When a second real adapter exists, register fetchers/parsers/extractors in one place. Do not add a registry as ceremony.
+Crawler output still never becomes consumer-facing without explicit publish.
+
+Provider identity imports create/update `venues` and `venue_provider_links`. They do not auto-publish deals.
+
+See [OPERATOR.md](./OPERATOR.md) for dashboard operations.
+
+`IngestionPipeline` still runs per-source demo/HTML refreshes. `IngestionOrchestrator` runs provider search and multi-page website crawls. Fetchers/parsers/extractors are chosen by content type and source type.
 
 ## Safety
 
@@ -68,11 +78,24 @@ Treat fetched content as untrusted input. Text inside a restaurant page must nev
 
 Do not bypass auth, CAPTCHAs, or access controls. Do not scrape private content.
 
+## Last-seen vs last-verified
+
+A successful crawl that still contains an offer updates `last_seen_at` and `last_verified_at`.
+A successful crawl where the offer text is gone increments `consecutive_misses` and does **not**
+update `last_seen_at`. After three misses the offer is marked removed (hidden, not deleted).
+A failed fetch is `verification_failed` and is never treated as disappearance.
+
+Unchanged page bytes skip expensive re-extraction. Page hashes are stored per URL on `sources.config.page_hashes`.
+
 ## Jobs
 
 | Job | Who enqueues | Who runs |
 | --- | --- | --- |
 | `source.refresh` | Admin `POST /sources/{id}/refresh` or stale cron | Worker |
+| `website.crawl` | Admin crawler / business page | Worker |
+| `provider.search` | Admin Providers page | Worker |
+| `freshness.detect_stale` | Hourly stale cron | Worker |
+| `freshness.expire` | Hourly stale cron | Worker |
 | `sources.enqueue_stale` | Render cron hourly | Cron process, then worker |
 
 Admin also has `POST /sources/{id}/refresh/sync` for local demos when a worker is not running. Production should use the queue.

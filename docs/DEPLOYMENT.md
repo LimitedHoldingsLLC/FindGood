@@ -55,6 +55,9 @@ Never commit `.env`. Templates: [`.env.example`](../.env.example), [`apps/web/.e
 | `CANONICAL_HOST`, `ACQUISITION_HOST` | SEO / aliases | no |
 | `FEATURE_*` | platform flags | no |
 | `CRAWLER_*` | ingestion | no |
+| `GOOGLE_PLACES_API_KEY`, `YELP_API_KEY`, `OPENTABLE_API_KEY` | ingestion providers | yes |
+| `GOOGLE_PLACES_MAX_CALLS_PER_RUN`, `YELP_MAX_CALLS_PER_RUN`, `CRAWLER_MAX_PAGES_PER_RUN` | cost caps | no |
+| `BUSINESS_STALE_AFTER_DAYS`, `HAPPY_HOUR_STALE_AFTER_DAYS`, … | freshness windows | no |
 | `RATE_LIMIT_ENABLED`, `RATE_LIMIT_PER_MINUTE` | API (in-process; one instance) | no |
 | `NEXT_PUBLIC_API_BASE_URL` | food app | no (public) |
 | `NEXT_PUBLIC_SITE_URL` | food app | no (public) |
@@ -82,8 +85,12 @@ Render API `healthCheckPath` is `/health`.
 
 ## Observability (shipped)
 
-Structured logs (`structlog`), `X-Request-ID` / `request_id`, crawl_run_id on ingestion logs. No paid error tracker yet. Prefer fixing log gaps over adding a vendor.
+Structured logs (`structlog`), `X-Request-ID` / `request_id`, crawl_run_id and ingestion_run_id on ingestion logs. No paid error tracker yet. Prefer fixing log gaps over adding a vendor.
 
-## Cost
+## Cost and optional workers
 
-Current Render plans in `render.yaml` are free API/worker/Postgres/KV plus a starter cron. Do not add paid search, a second database, or Kubernetes. Upgrade a specific process when that process is the bottleneck.
+The existing hourly cron stays enqueue-only. It now also enqueues freshness detect/expire. The worker must be running for queued crawls and provider searches.
+
+Operator runbook: [`docs/OPERATOR.md`](./OPERATOR.md).
+
+Current Render plans in `render.yaml` are free API/worker/Postgres/KV plus a starter cron. Do not add paid search, a second database, or Kubernetes. Upgrade a specific process when that process is the bottleneck. Do not create extra paid Render services automatically.

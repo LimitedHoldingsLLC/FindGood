@@ -13,8 +13,20 @@ export const DEFAULT_LOCATION: ConsumerLocation = {
 
 export const NEIGHBORHOODS = [
   "Downtown",
+  "Arts District",
+  "Koreatown",
+  "Hollywood",
+  "West Hollywood",
   "Silver Lake",
-  "Santa Monica",
-  "Los Feliz",
   "Echo Park",
+  "Los Feliz",
+  "Atwater Village",
+  "Highland Park",
+  "Eagle Rock",
+  "Santa Monica",
+  "Venice",
+  "Culver City",
+  "Studio City",
+  "Pasadena",
+  "Long Beach",
 ];

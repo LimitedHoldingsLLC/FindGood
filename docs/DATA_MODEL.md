@@ -23,6 +23,13 @@ Venue                              # business identity
 
 Verification                       # subject_type + subject_id (not deal-only)
 CrawlRun                           # one fetch/parse/extract attempt
+IngestionRun                       # operator-facing job (search, crawl, refresh)
+VenueProviderLink                  # google_places / yelp / opentable / website id
+ReviewItem                         # human review queue beyond extraction candidates
+AdminAuditLog                      # manual admin actions
+CrawlDomain                        # per-host crawler health
+ProviderUsageDaily                 # API call counters
+ErrorEvent                         # grouped operational errors
 ```
 
 Provenance for a consumer-visible offer:
@@ -104,13 +111,13 @@ Freshness labels are derived in `domain/verification/freshness.py` (today / 1 da
 | `deals.scope` + nullable `deals.venue_id` | Business-wide or multi-location offers |
 | `transaction_destinations` | Order / reserve / book URLs; no provider columns on `venues` |
 | `clicks` / `conversions` | Attribution |
-| External IDs on venues | Later identity resolution |
+| External IDs on venues | Shipped as `venue_provider_links` |
 
 Do **not** add required `normal_price` / `start_time` on `deals`. Items and schedules already hold those.
 
 ## Identity resolution
 
-`SimpleDuplicateMatcher` compares normalized name+city, phone digits, and website host. Exact signals only. It is not applied on ingest writes yet. Do not add a probabilistic matcher until duplicates are a real operational problem.
+`SimpleDuplicateMatcher` plus `classify_match` run on provider imports. Provider IDs live on `venue_provider_links`. Auto-merge requires a strong second signal (phone, website, or nearby same name). Name+city alone goes to the review queue. Fuzzy name matching stays out of the matcher.
 
 ## What must not happen
 

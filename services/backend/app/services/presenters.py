@@ -25,6 +25,7 @@ from app.domain.schedules.engine import (
 )
 from app.domain.scoring.service import DealScoringService, ScoreInput
 from app.domain.verification.freshness import describe_freshness
+from app.domain.verification.policy import deal_kind_from_type, evaluate_freshness
 
 _scorer = DealScoringService()
 
@@ -71,6 +72,17 @@ def present_deal(
     ]
     availability = evaluate_deal_availability(windows, location.timezone, now)
     freshness = describe_freshness(verification.verified_at if verification else None, now)
+    last_verified = getattr(deal, "last_verified_at", None) or (verification.verified_at if verification else None)
+    end_dates = [schedule.valid_until for schedule in deal.schedules if schedule.valid_until]
+    explicit_end = max(end_dates) if end_dates else None
+    policy = evaluate_freshness(
+        kind=deal_kind_from_type(deal.deal_type),
+        now=now,
+        last_verified_at=last_verified,
+        last_seen_at=getattr(deal, "last_seen_at", None),
+        explicit_end_date=explicit_end,
+        sighting_state=getattr(deal, "sighting_state", None),
+    )
     items = []
     for item in deal.items:
         absolute, percent = savings(item.normal_price, item.deal_price)
@@ -148,6 +160,9 @@ def present_deal(
         provenance=provenance,
         score=score,
         distance_km=distance,
+        freshness_status=policy.status.value,
+        last_seen_at=getattr(deal, "last_seen_at", None),
+        last_verified_at=last_verified,
     )
 
 

@@ -7,6 +7,7 @@ import structlog
 
 request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 crawl_run_id_ctx: ContextVar[str | None] = ContextVar("crawl_run_id", default=None)
+ingestion_run_id_ctx: ContextVar[str | None] = ContextVar("ingestion_run_id", default=None)
 
 
 def new_request_id() -> str:
@@ -20,10 +21,13 @@ def bind_request_id(request_id: str) -> None:
 def add_contextvars(_logger: object, _method: str, event_dict: dict) -> dict:
     request_id = request_id_ctx.get()
     crawl_run_id = crawl_run_id_ctx.get()
+    ingestion_run_id = ingestion_run_id_ctx.get()
     if request_id:
         event_dict["request_id"] = request_id
     if crawl_run_id:
         event_dict["crawl_run_id"] = crawl_run_id
+    if ingestion_run_id:
+        event_dict["ingestion_run_id"] = ingestion_run_id
     return event_dict
 
 

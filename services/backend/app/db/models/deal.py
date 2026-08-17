@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text, Time
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, Time
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from app.db.models.enums import DealOfferingKind, DealType, PublicationState, RecordStatus, Vertical
+from app.db.models.enums import (
+    DealOfferingKind,
+    DealType,
+    FreshnessStatus,
+    PublicationState,
+    RecordStatus,
+    SightingState,
+    Vertical,
+)
 
 if TYPE_CHECKING:
     from app.db.models.source import ExtractionCandidate, SourceSnapshot
@@ -29,6 +37,16 @@ class Deal(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(32), default=RecordStatus.PUBLISHED, index=True)
     publication_state: Mapped[str] = mapped_column(String(32), default=PublicationState.UNPUBLISHED, index=True)
     source_confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3), default=Decimal("0.500"))
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_refresh_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    freshness_status: Mapped[str] = mapped_column(String(32), default=FreshnessStatus.UNVERIFIED, index=True)
+    sighting_state: Mapped[str] = mapped_column(String(32), default=SightingState.ACTIVE, index=True)
+    extraction_method: Mapped[str | None] = mapped_column(String(40))
+    consecutive_misses: Mapped[int] = mapped_column(Integer, default=0)
+    failure_count: Mapped[int] = mapped_column(Integer, default=0)
+    raw_source_text: Mapped[str | None] = mapped_column(Text)
 
     venue_location: Mapped[VenueLocation] = relationship(back_populates="deals")
     schedules: Mapped[list[DealSchedule]] = relationship(back_populates="deal", cascade="all, delete-orphan")

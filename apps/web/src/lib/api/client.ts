@@ -1,6 +1,19 @@
 import type {
+  AdminAudit,
+  AdminDeal,
+  AdminErrorGroup,
+  AdminFreshness,
+  AdminOverview,
+  AdminPage,
+  AdminProvider,
+  AdminReview,
+  AdminRun,
+  AdminSearch,
   AdminSession,
+  AdminSystem,
+  AdminVenue,
   Candidate,
+  CrawlDomain,
   Deal,
   DealList,
   DealQuery,
@@ -10,7 +23,9 @@ import type {
   VenueList,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  (process.env.NODE_ENV === "production" ? "https://findgood.onrender.com" : "http://localhost:8000");
 
 export class ApiError extends Error {
   constructor(
@@ -122,6 +137,78 @@ export function adminApi(token: string) {
       request<Deal>(`/api/v1/admin/candidates/${id}/approve`, { method: "POST", headers }),
     rejectCandidate: (id: string) =>
       request<Candidate>(`/api/v1/admin/candidates/${id}/reject`, { method: "POST", headers }),
+    overview: () => request<AdminOverview>("/api/v1/admin/overview", { headers }),
+    search: (q: string) => request<AdminSearch>(`/api/v1/admin/search?q=${encodeURIComponent(q)}`, { headers }),
+    opsVenues: (params: Record<string, string | number | undefined> = {}) =>
+      request<AdminPage<AdminVenue>>(`/api/v1/admin/ops/venues${queryString(params)}`, { headers }),
+    opsVenue: (id: string) => request<AdminVenue>(`/api/v1/admin/ops/venues/${id}`, { headers }),
+    crawlVenue: (id: string) =>
+      request<AdminRun>(`/api/v1/admin/ops/venues/${id}/crawl`, { method: "POST", headers, body: "{}" }),
+    disableVenue: (id: string) =>
+      request<AdminVenue>(`/api/v1/admin/ops/venues/${id}/disable`, { method: "POST", headers, body: "{}" }),
+    refreshGoogle: (id: string) =>
+      request<AdminRun>(`/api/v1/admin/ops/venues/${id}/refresh-google`, { method: "POST", headers, body: "{}" }),
+    refreshYelp: (id: string) =>
+      request<AdminRun>(`/api/v1/admin/ops/venues/${id}/refresh-yelp`, { method: "POST", headers, body: "{}" }),
+    opsDeals: (params: Record<string, string | number | undefined> = {}) =>
+      request<AdminPage<AdminDeal>>(`/api/v1/admin/ops/deals${queryString(params)}`, { headers }),
+    opsDeal: (id: string) => request<AdminDeal>(`/api/v1/admin/ops/deals/${id}`, { headers }),
+    verifyDeal: (id: string, notes?: string) =>
+      request<AdminDeal>(`/api/v1/admin/ops/deals/${id}/verify`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ notes }),
+      }),
+    rejectDeal: (id: string) =>
+      request<AdminDeal>(`/api/v1/admin/ops/deals/${id}/reject`, { method: "POST", headers, body: "{}" }),
+    expireDeal: (id: string) =>
+      request<AdminDeal>(`/api/v1/admin/ops/deals/${id}/expire`, { method: "POST", headers, body: "{}" }),
+    restoreDeal: (id: string) =>
+      request<AdminDeal>(`/api/v1/admin/ops/deals/${id}/restore`, { method: "POST", headers, body: "{}" }),
+    crawl: (body: object) =>
+      request<AdminRun>("/api/v1/admin/ingestion/crawl", { method: "POST", headers, body: JSON.stringify(body) }),
+    googleSearch: (body: object) =>
+      request<AdminRun>("/api/v1/admin/ingestion/google/search", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      }),
+    yelpSearch: (body: object) =>
+      request<AdminRun>("/api/v1/admin/ingestion/yelp/search", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      }),
+    runs: (params: Record<string, string | number | undefined> = {}) =>
+      request<AdminPage<AdminRun>>(`/api/v1/admin/ingestion/runs${queryString(params)}`, { headers }),
+    run: (id: string) => request<AdminRun>(`/api/v1/admin/ingestion/runs/${id}`, { headers }),
+    retryRun: (id: string) =>
+      request<AdminRun>(`/api/v1/admin/ingestion/runs/${id}/retry`, { method: "POST", headers, body: "{}" }),
+    cancelRun: (id: string) =>
+      request<AdminRun>(`/api/v1/admin/ingestion/runs/${id}/cancel`, { method: "POST", headers, body: "{}" }),
+    providers: () => request<AdminProvider[]>("/api/v1/admin/providers", { headers }),
+    freshness: (params: Record<string, string | number | undefined> = {}) =>
+      request<AdminFreshness>(`/api/v1/admin/freshness${queryString(params)}`, { headers }),
+    queueStale: () =>
+      request<{ queued: number }>("/api/v1/admin/freshness/queue-refresh", { method: "POST", headers, body: "{}" }),
+    review: (params: Record<string, string | number | undefined> = {}) =>
+      request<AdminPage<AdminReview>>(`/api/v1/admin/review${queryString(params)}`, { headers }),
+    reviewAction: (id: string, action: string) =>
+      request<AdminReview>(`/api/v1/admin/review/${id}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action }),
+      }),
+    errors: () => request<AdminErrorGroup[]>("/api/v1/admin/errors", { headers }),
+    crawlDomains: () => request<CrawlDomain[]>("/api/v1/admin/crawler/domains", { headers }),
+    system: () => request<AdminSystem>("/api/v1/admin/system", { headers }),
+    audit: () => request<AdminAudit[]>("/api/v1/admin/audit", { headers }),
+    bulkCrawl: (venueIds: string[], confirm: boolean) =>
+      request<{ queued: number; needs_confirmation?: boolean }>("/api/v1/admin/bulk/crawl", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ venue_ids: venueIds, confirm }),
+      }),
   };
 }
 

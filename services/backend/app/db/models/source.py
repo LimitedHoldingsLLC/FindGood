@@ -36,6 +36,9 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     trust_level: Mapped[str] = mapped_column(String(20), default=TrustLevel.MEDIUM)
     rate_limit_per_minute: Mapped[int] = mapped_column(Integer, default=6)
     respect_robots_txt: Mapped[bool] = mapped_column(Boolean, default=True)
+    next_refresh_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    last_content_hash: Mapped[str | None] = mapped_column(String(64))
+    consecutive_failures: Mapped[int] = mapped_column(Integer, default=0)
     config: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
     snapshots: Mapped[list["SourceSnapshot"]] = relationship(back_populates="source")

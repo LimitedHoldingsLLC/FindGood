@@ -65,6 +65,12 @@ class DealPublisher:
             status=RecordStatus.PUBLISHED,
             publication_state=PublicationState.PUBLISHED,
             source_confidence=candidate.confidence,
+            first_seen_at=datetime.now(UTC),
+            last_seen_at=datetime.now(UTC),
+            last_verified_at=datetime.now(UTC),
+            freshness_status="fresh",
+            extraction_method=(candidate.normalized_payload or {}).get("extraction_method") or "deterministic",
+            raw_source_text=(candidate.payload or {}).get("raw_text"),
         )
         self.deals.add(deal)
         for schedule in payload.get("schedules") or []:

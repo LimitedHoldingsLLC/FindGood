@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import NotFoundError
 from app.db.models import Deal, DealItem, DealPublication, DealSchedule, Venue, VenueLocation
-from app.db.models.enums import PublicationState, RecordStatus
+from app.db.models.enums import FreshnessStatus, PublicationState, RecordStatus, SightingState
 from app.db.models.verification import Verification
 
 
@@ -55,6 +55,10 @@ class DealRepository:
                 Deal.publication_state == PublicationState.PUBLISHED,
                 VenueLocation.status == RecordStatus.PUBLISHED,
                 Venue.status == RecordStatus.PUBLISHED,
+                Deal.freshness_status.notin_(
+                    [FreshnessStatus.EXPIRED, FreshnessStatus.STALE, FreshnessStatus.VERIFICATION_FAILED]
+                ),
+                Deal.sighting_state.notin_([SightingState.EXPIRED, SightingState.REMOVED]),
             )
         )
         if city:
@@ -94,6 +98,10 @@ class DealRepository:
                 Deal.venue_location_id == location_id,
                 Deal.publication_state == PublicationState.PUBLISHED,
                 Deal.status == RecordStatus.PUBLISHED,
+                Deal.freshness_status.notin_(
+                    [FreshnessStatus.EXPIRED, FreshnessStatus.STALE, FreshnessStatus.VERIFICATION_FAILED]
+                ),
+                Deal.sighting_state.notin_([SightingState.EXPIRED, SightingState.REMOVED]),
             )
         )
         return list(self.db.scalars(stmt.order_by(Deal.title)))
@@ -142,3 +150,7 @@ class DealRepository:
         for row in self.db.scalars(stmt):
             latest.setdefault(row.subject_id, row)
         return latest
+
+    def list_all_for_location(self, location_id: UUID) -> list[Deal]:
+        stmt = self._eager(select(Deal).where(Deal.venue_location_id == location_id).order_by(Deal.title))
+        return list(self.db.scalars(stmt))

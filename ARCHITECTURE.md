@@ -282,6 +282,17 @@ TRADEOFF: One operator identity from env, not per-person accounts. X-Admin-Key r
 REVERSIBILITY: High. A later user table can implement the same AuthN protocol.
 ```
 
+### Ingestion engine, freshness, and admin control plane (2026-08-16)
+
+```text
+DECISION: Extend Venue/Deal/Source/CrawlRun. Add provider links, ingestion_runs, review, audit, crawl domain health, and a policy module for freshness. Do not rename tables to Business/Offer.
+OPTIONS: Parallel businesses/offers schema / generalize CrawlRun only / additive engine on existing graph
+RECOMMENDATION: Additive engine on the existing Venue/Deal graph
+WHY: Platform docs already say Venue is Business and Deal is Offer. A second graph would split the catalog.
+TRADEOFF: Public routes still say /venues and /deals. Admin UI uses “business/offer” language.
+REVERSIBILITY: High. New tables drop in 0003 downgrade. Additive columns on venues/deals are nullable or defaulted.
+```
+
 ### Phase 2 — additive vertical (2026-08-16)
 
 ```text
