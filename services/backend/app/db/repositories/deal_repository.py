@@ -50,6 +50,7 @@ class DealRepository:
         accepts_reservations: bool | None = None,
         feature: str | None = None,
         weekday: int | None = None,
+        min_rating: Decimal | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[Deal], int]:
@@ -107,6 +108,8 @@ class DealRepository:
         if weekday is not None:
             weekday_deals = select(DealSchedule.deal_id).where(DealSchedule.days_of_week.contains([weekday]))
             stmt = stmt.where(Deal.id.in_(weekday_deals))
+        if min_rating is not None:
+            stmt = stmt.where(Venue.rating >= min_rating)
         if max_price is not None:
             stmt = stmt.where(Deal.id.in_(select(DealItem.deal_id).where(DealItem.deal_price <= max_price)))
         if latitude is not None and longitude is not None and radius_km:

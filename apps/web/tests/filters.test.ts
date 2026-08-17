@@ -17,12 +17,14 @@ describe("filterHref", () => {
       price: "2",
       reservations: true,
       when: "evening",
+      minRating: "4",
     });
     expect(href).toContain("q=taco");
     expect(href).toContain("active_now=1");
     expect(href).toContain("price=2");
     expect(href).toContain("reservations=1");
     expect(href).toContain("when=evening");
+    expect(href).toContain("min_rating=4");
   });
 });
 

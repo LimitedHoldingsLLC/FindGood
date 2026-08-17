@@ -33,6 +33,7 @@ def list_deals(
     feature: VenueFeature | None = None,
     when: TimeBucket | None = None,
     day: int | None = Query(default=None, ge=1, le=7),
+    min_rating: Decimal | None = Query(default=None, ge=1, le=5),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
     service: DealService = Depends(deal_service_dep),
@@ -57,6 +58,7 @@ def list_deals(
         feature=feature.value if feature else None,
         when=when,
         weekday=day,
+        min_rating=min_rating,
         page=page,
         page_size=page_size,
     )

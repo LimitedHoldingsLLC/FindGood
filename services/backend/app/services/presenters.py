@@ -49,6 +49,10 @@ def venue_card(venue: Venue, location: VenueLocation) -> VenueCardOut:
         drink_kinds=list(getattr(venue, "drink_kinds", None) or []),
         accepts_reservations=bool(getattr(venue, "accepts_reservations", False)),
         features=list(getattr(venue, "features", None) or []),
+        rating=getattr(venue, "rating", None),
+        rating_review_count=int(getattr(venue, "rating_review_count", 0) or 0),
+        rating_source_count=int(getattr(venue, "rating_source_count", 0) or 0),
+        rating_providers=list(getattr(venue, "rating_providers", None) or []),
     )
 
 
@@ -196,6 +200,10 @@ def present_venue(
         drink_kinds=list(getattr(venue, "drink_kinds", None) or []),
         accepts_reservations=bool(getattr(venue, "accepts_reservations", False)),
         features=list(getattr(venue, "features", None) or []),
+        rating=getattr(venue, "rating", None),
+        rating_review_count=int(getattr(venue, "rating_review_count", 0) or 0),
+        rating_source_count=int(getattr(venue, "rating_source_count", 0) or 0),
+        rating_providers=list(getattr(venue, "rating_providers", None) or []),
         locations=[location_out(location) for location in venue.locations],
         current_deals=current,
         upcoming_deals=upcoming,

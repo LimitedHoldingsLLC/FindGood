@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { Deal } from "@/lib/api/types";
-import { priceLevelLabel, primaryPrice, titleCaseKey } from "@/lib/format";
+import { formatRating, priceLevelLabel, primaryPrice, titleCaseKey } from "@/lib/format";
 
 const KIND_LABEL: Record<string, string> = {
   food: "Food",
@@ -30,6 +30,7 @@ export function DealCard({ deal }: { deal: Deal }) {
         {deal.venue.name}
         {priceLevelLabel(deal.venue.price_level) ? ` · ${priceLevelLabel(deal.venue.price_level)}` : ""}
         {deal.venue.cuisines?.[0] ? ` · ${titleCaseKey(deal.venue.cuisines[0])}` : ""}
+        {formatRating(deal.venue.rating) ? ` · ★ ${formatRating(deal.venue.rating)}` : ""}
       </p>
       {deal.description ? (
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-ink/80">{deal.description}</p>

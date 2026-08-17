@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatMoney, priceLevelLabel, primaryPrice, titleCaseKey } from "@/lib/format";
+import { formatMoney, formatRating, priceLevelLabel, primaryPrice, ratingSourceLabel, titleCaseKey } from "@/lib/format";
 
 describe("formatMoney", () => {
   it("formats decimal strings without using floats as source of truth", () => {
@@ -33,6 +33,19 @@ describe("priceLevelLabel", () => {
   it("renders Yelp-style dollar signs", () => {
     expect(priceLevelLabel(2)).toBe("$$");
     expect(priceLevelLabel(null)).toBeNull();
+  });
+});
+
+describe("formatRating", () => {
+  it("keeps one decimal place", () => {
+    expect(formatRating("4.30")).toBe("4.3");
+    expect(formatRating(null)).toBeNull();
+  });
+});
+
+describe("ratingSourceLabel", () => {
+  it("names official providers without calling them FindGood scores", () => {
+    expect(ratingSourceLabel(["google_places", "yelp"])).toBe("Google and Yelp");
   });
 });
 

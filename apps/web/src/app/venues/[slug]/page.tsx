@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { DealCard } from "@/features/deals/DealCard";
 import { ApiError, api } from "@/lib/api/client";
-import { priceLevelLabel, titleCaseKey } from "@/lib/format";
+import { formatRating, priceLevelLabel, ratingSourceLabel, titleCaseKey } from "@/lib/format";
 import { maps } from "@/lib/maps";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +41,15 @@ export default async function VenuePage({ params }: Props) {
         <h1 className="mt-2 font-display text-5xl">{venue.name}</h1>
         <p className="mt-3 max-w-2xl text-lg text-muted">{venue.description}</p>
         <div className="mt-5 flex flex-wrap gap-4 text-sm">
+          {formatRating(venue.rating) ? (
+            <p>
+              ★ {formatRating(venue.rating)} FindGood.Food
+              {venue.rating_review_count
+                ? ` · ${venue.rating_review_count.toLocaleString()} reviews`
+                : ""}
+              {ratingSourceLabel(venue.rating_providers) ? ` from ${ratingSourceLabel(venue.rating_providers)}` : ""}
+            </p>
+          ) : null}
           {priceLevelLabel(venue.price_level) ? <p>{priceLevelLabel(venue.price_level)}</p> : null}
           {venue.cuisines?.length ? <p>{venue.cuisines.map(titleCaseKey).join(" · ")}</p> : null}
           {venue.accepts_reservations ? <p>Reservations</p> : null}

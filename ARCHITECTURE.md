@@ -293,6 +293,17 @@ TRADEOFF: Public routes still say /venues and /deals. Admin UI uses “business/
 REVERSIBILITY: High. New tables drop in 0003 downgrade. Additive columns on venues/deals are nullable or defaulted.
 ```
 
+### FindGood.Food composite ratings (2026-08-17)
+
+```text
+DECISION: Official Google Places + Yelp Fusion scores become a Bayesian composite on Venue.rating. Consumer filter is ?min_rating=. Do not scrape review sites.
+OPTIONS: Show each provider’s stars / scrape HTML reviews / composite from official APIs
+RECOMMENDATION: Composite from official APIs
+WHY: Provider terms restrict redistributing Google/Yelp stars as if they were ours. A weighted composite is FindGood.Food’s own score and stays explainable. HTML scraping would fight access controls.
+TRADEOFF: No live Tripadvisor/OpenTable stars until those have authorized adapters. Thin 5.0s shrink toward 3.8.
+REVERSIBILITY: High. 0005 downgrade drops the columns. New query param is additive.
+```
+
 ### Consumer discovery filters (2026-08-17)
 
 ```text

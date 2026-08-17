@@ -43,6 +43,7 @@ class DealService:
         feature: str | None = None,
         when: TimeBucket | None = None,
         weekday: int | None = None,
+        min_rating: Decimal | None = None,
         page: int = 1,
         page_size: int = 20,
         now: datetime | None = None,
@@ -73,6 +74,7 @@ class DealService:
             accepts_reservations=accepts_reservations,
             feature=feature,
             weekday=weekday,
+            min_rating=min_rating,
             offset=offset,
             limit=fetch_size,
         )

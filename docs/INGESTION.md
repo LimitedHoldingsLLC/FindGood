@@ -48,8 +48,8 @@ An LLM extractor later implements the same `Extractor` protocol. Do not fork the
 | `HttpFetcher` | Public HTTP(S) GET with size/timeout caps, retries, validated redirects, robots.txt, per-domain rate limits. |
 | `JsonParser` / `HtmlParser` | JSON documents or HTML pages. |
 | `DemoExtractor` / `HtmlOfferExtractor` | Demo fixtures, or JSON-LD + heuristic happy-hour text. |
-| `GooglePlacesAdapter` | Places API (New) text search and place details. Identity only, not offers. |
-| `YelpAdapter` | Yelp Fusion search and business details. Identity only. |
+| `GooglePlacesAdapter` | Places API (New) text search and place details. Identity only, not offers. Ratings feed the FindGood.Food composite. |
+| `YelpAdapter` | Yelp Fusion search and business details. Identity only. Ratings feed the composite. |
 | `OpenTableAdapter` | Explicitly not configured until an authorized partner feed exists. |
 | `DealNormalizer` / `DealValidator` | Title, schedule, money, confidence. |
 | `DealPublisher` | Admin approve path. Requires a `venue_location_id`. |
@@ -77,6 +77,8 @@ Every network fetch goes through `ingestion/safety.py`:
 Treat fetched content as untrusted input. Text inside a restaurant page must never change control flow, prompts, or publish rules.
 
 Do not bypass auth, CAPTCHAs, or access controls. Do not scrape private content.
+
+Ratings come from official provider APIs (Google Places, Yelp Fusion today). Do not scrape Google, Yelp, Tripadvisor, or OpenTable review pages. A later source must be another authorized adapter that emits `NormalizedBusiness.rating` / `review_count`.
 
 ## Last-seen vs last-verified
 

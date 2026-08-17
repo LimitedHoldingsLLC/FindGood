@@ -306,6 +306,14 @@ def test_deal_list_discovery_filters(client: TestClient) -> None:
     unknown = client.get("/api/v1/deals", params={"cuisine": "not-a-cuisine"})
     assert unknown.status_code == 422
 
+    stars = client.get("/api/v1/deals", params={"min_rating": "4"})
+    assert stars.status_code == 200
+    assert stars.json()["items"]
+    for deal in stars.json()["items"]:
+        rating = deal["venue"].get("rating")
+        assert rating is not None
+        assert float(rating) >= 4
+
 
 def test_vertical_filter_defaults_to_food(client: TestClient) -> None:
     """Omitted vertical and vertical=food return seed food deals; beauty is empty."""

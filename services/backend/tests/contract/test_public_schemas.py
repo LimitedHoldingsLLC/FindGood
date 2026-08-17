@@ -102,5 +102,5 @@ def test_deal_list_accepts_vertical_query() -> None:
 
 def test_deal_list_accepts_discovery_filters() -> None:
     params = inspect.signature(list_deals).parameters
-    for name in ("q", "cuisine", "price_level", "drink", "reservations", "feature", "when", "day"):
+    for name in ("q", "cuisine", "price_level", "drink", "reservations", "feature", "when", "day", "min_rating"):
         assert name in params

@@ -16,6 +16,7 @@ export type DiscoverySearch = {
   when?: string;
   day?: string;
   deal_type?: string;
+  min_rating?: string;
 };
 
 export function filterStateFromSearch(params: DiscoverySearch): FilterState {
@@ -32,6 +33,7 @@ export function filterStateFromSearch(params: DiscoverySearch): FilterState {
     when: params.when,
     day: params.day,
     dealType: params.deal_type,
+    minRating: params.min_rating,
   };
 }
 
@@ -50,6 +52,7 @@ export function dealQueryFromSearch(params: DiscoverySearch, city: string): Deal
     when: params.when,
     day: params.day,
     deal_type: params.deal_type,
+    min_rating: params.min_rating,
     vertical: FOOD_VERTICAL,
   };
 }

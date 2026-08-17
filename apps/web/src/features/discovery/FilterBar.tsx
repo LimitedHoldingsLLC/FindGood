@@ -12,6 +12,7 @@ import {
   FEATURES,
   NEIGHBORHOOD_OPTIONS,
   PRICE_LEVELS,
+  RATINGS,
   TIME_BUCKETS,
   filterHref,
   hasActiveFilters,
@@ -19,7 +20,7 @@ import {
   type FilterState,
 } from "./filters";
 
-type PanelId = "when" | "area" | "cuisine" | "price" | "drinks" | "reservations" | "more";
+type PanelId = "when" | "area" | "cuisine" | "price" | "rating" | "drinks" | "reservations" | "more";
 
 type Props = {
   city: string;
@@ -71,6 +72,7 @@ export function FilterBar({ city, state }: Props) {
   const areaLabel = state.neighborhood ?? "Area";
   const cuisineLabel = labelFor(CUISINES, state.cuisine) ?? "Cuisine";
   const priceLabel = labelFor(PRICE_LEVELS, state.price) ?? "Price";
+  const ratingLabel = state.minRating ? `${state.minRating}+` : "Stars";
   const drinkLabel = labelFor(DRINKS, state.drink) ?? "Drink types";
   const reservationLabel = state.reservations ? "Takes reservations" : "Reservations";
   const moreLabel = labelFor(DEAL_TYPES, state.dealType) ?? labelFor(FEATURES, state.feature) ?? "More";
@@ -111,6 +113,7 @@ export function FilterBar({ city, state }: Props) {
         <Trigger label={areaLabel} open={open === "area"} active={Boolean(state.neighborhood)} onClick={() => toggle("area")} />
         <Trigger label={cuisineLabel} open={open === "cuisine"} active={Boolean(state.cuisine)} onClick={() => toggle("cuisine")} />
         <Trigger label={priceLabel} open={open === "price"} active={Boolean(state.price)} onClick={() => toggle("price")} />
+        <Trigger label={ratingLabel} open={open === "rating"} active={Boolean(state.minRating)} onClick={() => toggle("rating")} />
         <Trigger label={drinkLabel} open={open === "drinks"} active={Boolean(state.drink)} onClick={() => toggle("drinks")} />
         <Trigger
           label={reservationLabel}
@@ -173,6 +176,20 @@ export function FilterBar({ city, state }: Props) {
         <Panel title="Price">
           {PRICE_LEVELS.map((option) => (
             <Chip key={option.value} href={href({ price: state.price === option.value ? undefined : option.value })} on={state.price === option.value}>
+              {option.label}
+            </Chip>
+          ))}
+        </Panel>
+      ) : null}
+
+      {open === "rating" ? (
+        <Panel title="FindGood.Food rating">
+          {RATINGS.map((option) => (
+            <Chip
+              key={option.value}
+              href={href({ minRating: state.minRating === option.value ? undefined : option.value })}
+              on={state.minRating === option.value}
+            >
               {option.label}
             </Chip>
           ))}

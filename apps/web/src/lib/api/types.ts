@@ -92,6 +92,10 @@ export interface VenueCard {
   drink_kinds?: string[];
   accepts_reservations?: boolean;
   features?: string[];
+  rating?: string | null;
+  rating_review_count?: number;
+  rating_source_count?: number;
+  rating_providers?: string[];
 }
 
 export interface Location {
@@ -150,6 +154,10 @@ export interface Venue {
   drink_kinds?: string[];
   accepts_reservations?: boolean;
   features?: string[];
+  rating?: string | null;
+  rating_review_count?: number;
+  rating_source_count?: number;
+  rating_providers?: string[];
   locations: Location[];
   current_deals: Deal[];
   upcoming_deals: Deal[];
@@ -432,6 +440,7 @@ export interface DealQuery {
   feature?: string;
   when?: string;
   day?: string;
+  min_rating?: string;
   vertical?: Vertical;
   page?: number;
   page_size?: number;

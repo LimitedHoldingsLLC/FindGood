@@ -19,6 +19,7 @@ from app.db.models import (
     Source,
     Venue,
     VenueLocation,
+    VenueProviderLink,
 )
 from app.db.models.enums import (
     DealOfferingKind,
@@ -31,6 +32,7 @@ from app.db.models.enums import (
 )
 from app.db.models.verification import Verification
 from app.db.session import SessionLocal
+from app.domain.ratings.composite import ProviderRating, apply_to_venue
 from app.domain.venues.slug import slugify
 
 logger = get_logger("seed")
@@ -49,6 +51,12 @@ class LocationSpec(TypedDict):
     longitude: Decimal
 
 
+class RatingSpec(TypedDict):
+    provider: str
+    rating: str
+    review_count: int
+
+
 class VenueSpec(TypedDict):
     name: str
     description: str
@@ -60,6 +68,7 @@ class VenueSpec(TypedDict):
     drink_kinds: list[str]
     accepts_reservations: bool
     features: list[str]
+    ratings: list[RatingSpec]
     location: LocationSpec
 
 
@@ -102,6 +111,10 @@ def _venue_specs() -> list[VenueSpec]:
             "drink_kinds": ["cocktails", "beer", "wine"],
             "accepts_reservations": True,
             "features": ["good_for_groups", "walk_in"],
+            "ratings": [
+                {"provider": "google_places", "rating": "4.4", "review_count": 890},
+                {"provider": "yelp", "rating": "4.0", "review_count": 412},
+            ],
             "location": {
                 "address_line1": "412 S Spring St",
                 "city": "Los Angeles",
@@ -123,6 +136,10 @@ def _venue_specs() -> list[VenueSpec]:
             "drink_kinds": ["cocktails", "beer"],
             "accepts_reservations": False,
             "features": ["patio", "walk_in"],
+            "ratings": [
+                {"provider": "google_places", "rating": "4.6", "review_count": 210},
+                {"provider": "yelp", "rating": "4.5", "review_count": 156},
+            ],
             "location": {
                 "address_line1": "2814 Sunset Blvd",
                 "city": "Los Angeles",
@@ -144,6 +161,10 @@ def _venue_specs() -> list[VenueSpec]:
             "drink_kinds": ["wine", "cocktails"],
             "accepts_reservations": True,
             "features": ["good_for_groups"],
+            "ratings": [
+                {"provider": "google_places", "rating": "4.7", "review_count": 640},
+                {"provider": "yelp", "rating": "4.3", "review_count": 280},
+            ],
             "location": {
                 "address_line1": "1624 Ocean Ave",
                 "city": "Los Angeles",
@@ -165,6 +186,10 @@ def _venue_specs() -> list[VenueSpec]:
             "drink_kinds": ["nonalcoholic", "wine"],
             "accepts_reservations": False,
             "features": ["patio", "walk_in"],
+            "ratings": [
+                {"provider": "google_places", "rating": "4.2", "review_count": 180},
+                {"provider": "yelp", "rating": "4.0", "review_count": 95},
+            ],
             "location": {
                 "address_line1": "1862 Hillhurst Ave",
                 "city": "Los Angeles",
@@ -186,6 +211,10 @@ def _venue_specs() -> list[VenueSpec]:
             "drink_kinds": ["cocktails", "beer", "wine"],
             "accepts_reservations": False,
             "features": ["late_night", "walk_in"],
+            "ratings": [
+                {"provider": "google_places", "rating": "3.9", "review_count": 320},
+                {"provider": "yelp", "rating": "3.8", "review_count": 210},
+            ],
             "location": {
                 "address_line1": "1518 Echo Park Ave",
                 "city": "Los Angeles",
@@ -227,6 +256,7 @@ def _venues() -> list[Venue]:
                 **spec["location"],
             )
         )
+        _apply_seed_ratings(venue, spec["ratings"])
         venues.append(venue)
     return venues
 
@@ -239,15 +269,49 @@ def _backfill_discovery(db) -> int:
         spec = by_name.get(venue.name)
         if spec is None:
             continue
-        if venue.cuisines and venue.price_level is not None:
-            continue
-        venue.cuisines = spec["cuisines"]
-        venue.price_level = spec["price_level"]
-        venue.drink_kinds = spec["drink_kinds"]
-        venue.accepts_reservations = spec["accepts_reservations"]
-        venue.features = spec["features"]
-        updated += 1
+        changed = False
+        if not venue.cuisines or venue.price_level is None:
+            venue.cuisines = spec["cuisines"]
+            venue.price_level = spec["price_level"]
+            venue.drink_kinds = spec["drink_kinds"]
+            venue.accepts_reservations = spec["accepts_reservations"]
+            venue.features = spec["features"]
+            changed = True
+        if getattr(venue, "rating", None) is None and spec.get("ratings"):
+            apply_to_venue(venue, _provider_ratings(spec["ratings"]))
+            changed = True
+        if changed:
+            updated += 1
     return updated
+
+
+def _provider_ratings(specs: list[RatingSpec]) -> list[ProviderRating]:
+    return [
+        ProviderRating(
+            provider=item["provider"],
+            rating=Decimal(item["rating"]),
+            review_count=item["review_count"],
+        )
+        for item in specs
+    ]
+
+
+def _apply_seed_ratings(venue: Venue, specs: list[RatingSpec]) -> None:
+    now = datetime.now(UTC)
+    for item in specs:
+        venue.provider_links.append(
+            VenueProviderLink(
+                id=new_id(),
+                provider=item["provider"],
+                provider_business_id=f"seed:{slugify(venue.name)}:{item['provider']}",
+                rating=Decimal(item["rating"]),
+                review_count=item["review_count"],
+                first_seen_at=now,
+                last_seen_at=now,
+                extra_metadata={"seed": True},
+            )
+        )
+    apply_to_venue(venue, _provider_ratings(specs))
 
 
 def _catalog(venues: list[Venue]):

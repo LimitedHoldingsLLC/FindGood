@@ -6,10 +6,11 @@ copying the restaurant into four separate venue rows.
 """
 
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,6 +28,9 @@ class VenueProviderLink(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     provider: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
     provider_business_id: Mapped[str] = mapped_column(String(200), nullable=False)
     provider_url: Mapped[str | None] = mapped_column(String(1000))
+    rating: Mapped[Decimal | None] = mapped_column(Numeric(3, 2))
+    review_count: Mapped[int | None] = mapped_column(Integer)
+    rating_scale: Mapped[int] = mapped_column(Integer, default=5)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     extra_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)

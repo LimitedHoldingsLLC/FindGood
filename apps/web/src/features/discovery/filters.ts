@@ -13,6 +13,7 @@ export type FilterState = {
   when?: string;
   day?: string;
   dealType?: string;
+  minRating?: string;
 };
 
 export const CUISINES = [
@@ -87,6 +88,13 @@ export const DEAL_TYPES = [
   { value: "taco_night", label: "Taco night" },
 ] as const;
 
+export const RATINGS = [
+  { value: "3", label: "3+" },
+  { value: "3.5", label: "3.5+" },
+  { value: "4", label: "4+" },
+  { value: "4.5", label: "4.5+" },
+] as const;
+
 export const NEIGHBORHOOD_OPTIONS = NEIGHBORHOODS.map((name) => ({ value: name, label: name }));
 
 export function filterHref(city: string, next: FilterState): string {
@@ -103,6 +111,7 @@ export function filterHref(city: string, next: FilterState): string {
   if (next.when) params.set("when", next.when);
   if (next.day) params.set("day", next.day);
   if (next.dealType) params.set("deal_type", next.dealType);
+  if (next.minRating) params.set("min_rating", next.minRating);
   const query = params.toString();
   const base = city === "Los Angeles" ? "/" : `/${city.toLowerCase().replace(/\s+/g, "-")}`;
   return query ? `${base}?${query}` : base;
@@ -121,7 +130,8 @@ export function hasActiveFilters(state: FilterState): boolean {
       state.feature ||
       state.when ||
       state.day ||
-      state.dealType,
+      state.dealType ||
+      state.minRating,
   );
 }
 

@@ -88,6 +88,10 @@ class VenueCardOut(APIModel):
     drink_kinds: list[str] = Field(default_factory=list)
     accepts_reservations: bool = False
     features: list[str] = Field(default_factory=list)
+    rating: Decimal | None = None
+    rating_review_count: int = 0
+    rating_source_count: int = 0
+    rating_providers: list[str] = Field(default_factory=list)
 
 
 class DealOut(APIModel):
@@ -141,6 +145,10 @@ class VenueOut(APIModel):
     drink_kinds: list[str] = Field(default_factory=list)
     accepts_reservations: bool = False
     features: list[str] = Field(default_factory=list)
+    rating: Decimal | None = None
+    rating_review_count: int = 0
+    rating_source_count: int = 0
+    rating_providers: list[str] = Field(default_factory=list)
     locations: list[LocationOut]
     current_deals: list[DealOut] = Field(default_factory=list)
     upcoming_deals: list[DealOut] = Field(default_factory=list)

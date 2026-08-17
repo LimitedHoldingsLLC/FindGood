@@ -50,6 +50,8 @@ Manually created admin deals still get a publication row (and usually a `manual`
 | `drink_kinds` | Controlled array: `cocktails`, `beer`, `wine`, `natural_wine`, `sake`, `nonalcoholic`. |
 | `accepts_reservations` | Whether the business takes reservations. Booking URLs stay off this table. |
 | `features` | Controlled array: `patio`, `rooftop`, `outdoor`, `late_night`, `good_for_groups`, `walk_in`. |
+| `rating` | FindGood.Food composite (1–5, `Numeric`). Bayesian average of official provider scores, weighted by review count. |
+| `rating_review_count` / `rating_source_count` / `rating_providers` | How the composite was built. Provider star values stay on `venue_provider_links`. |
 | `vertical` | Controlled taxonomy. Default `food`. Consumer list endpoints default to `food` when the query param is omitted. |
 | `status` | `draft` / `published` / `archived` / `disabled` |
 
@@ -101,7 +103,7 @@ Freshness labels are derived in `domain/verification/freshness.py` (today / 1 da
 
 ## Indexes that exist
 
-- Venue slug, status, `primary_category`, `vertical`, `price_level`, `accepts_reservations`
+- Venue slug, status, `primary_category`, `vertical`, `price_level`, `accepts_reservations`, `rating`
 - Location venue, city, neighborhood, status, `(latitude, longitude)`
 - Deal location, `(status, publication_state)`, `deal_type`, `offering_kind`, `vertical`, `(vertical, status, publication_state)`
 - Source venue, `(is_active, crawl_enabled)`, unique `canonical_identity`

@@ -19,6 +19,7 @@ from app.db.models import Source, Venue, VenueLocation, VenueProviderLink
 from app.db.models.enums import RecordStatus, SourceType, TrustLevel
 from app.domain.duplicates.matcher import SimpleDuplicateMatcher, VenueIdentity, classify_match
 from app.domain.ingestion.schemas import NormalizedBusiness
+from app.domain.ratings.composite import apply_to_venue, ratings_from_links
 from app.domain.venues.slug import slugify
 from app.domain.verification.policy import next_refresh_after_success, windows_from_settings
 
@@ -58,7 +59,10 @@ class BusinessPersister:
             self._touch_venue(venue, business, now)
             existing_link.last_seen_at = now
             existing_link.provider_url = business.provider_url or existing_link.provider_url
+            existing_link.rating = business.rating
+            existing_link.review_count = business.review_count
             existing_link.extra_metadata = _provider_meta(business)
+            self._refresh_composite(venue)
             result.venue = venue
             result.updated = True
             return result
@@ -75,6 +79,7 @@ class BusinessPersister:
             else:
                 self._touch_venue(venue, business, now)
                 self._add_link(venue.id, business, now)
+                self._refresh_composite(venue)
                 result.venue = venue
                 result.updated = True
                 result.match_reasons = best.reasons
@@ -83,6 +88,7 @@ class BusinessPersister:
 
         venue = self._create_venue(business, now)
         self._add_link(venue.id, business, now)
+        self._refresh_composite(venue)
         result.venue = venue
         result.created = True
         if decision == "review" and best:
@@ -168,6 +174,8 @@ class BusinessPersister:
                 provider=business.provider,
                 provider_business_id=business.provider_business_id,
                 provider_url=business.provider_url,
+                rating=business.rating,
+                review_count=business.review_count,
                 first_seen_at=now,
                 last_seen_at=now,
                 extra_metadata=_provider_meta(business),
@@ -193,6 +201,12 @@ class BusinessPersister:
             )
         )
 
+    def _refresh_composite(self, venue: Venue) -> None:
+        links = list(
+            self.db.scalars(select(VenueProviderLink).where(VenueProviderLink.venue_id == venue.id))
+        )
+        apply_to_venue(venue, ratings_from_links(links))
+
 
 def _as_identity(business: NormalizedBusiness) -> VenueIdentity:
     loc = business.location
@@ -209,8 +223,8 @@ def _as_identity(business: NormalizedBusiness) -> VenueIdentity:
 
 
 def _provider_meta(business: NormalizedBusiness) -> dict:
-    # Ratings stay here, not on the public venue row, because provider terms
-    # often restrict redistributing reviews as if they were FindGood's.
+    # Provider-owned scores stay on the link. The public venue.rating is a
+    # FindGood.Food composite, not a Google or Yelp clone.
     return {
         "rating": str(business.rating) if business.rating is not None else None,
         "review_count": business.review_count,
