@@ -63,7 +63,7 @@ Today that means: `apps/web` talks to `/api/v1` only. Availability, prices, and 
 
 ## Deliberately not built
 
-Users, saved items, transaction destinations, click/conversion logs, merchant claims, `/search`, `/nearby` as dedicated routes, PostGIS, a deals app, a merchant app, a separate admin deploy.
+Users, saved items, transaction destinations, click/conversion logs, merchant claims, `/search` as a dedicated Places wrapper, PostGIS, a deals app, a merchant app, a separate admin deploy. `GET /api/v1/map/locations` is the geographic query.
 
 ## Contract lock
 

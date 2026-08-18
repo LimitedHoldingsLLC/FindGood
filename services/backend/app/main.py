@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.middleware import InMemoryRateLimiter, RequestContextMiddleware
-from app.api.routes import admin, admin_auth, admin_ops, deals, health, venues
+from app.api.routes import admin, admin_auth, admin_ops, deals, health, map as map_routes, venues
 from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import configure_logging, request_id_ctx
@@ -40,6 +40,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(venues.router)
 app.include_router(deals.router)
+app.include_router(map_routes.router)
 app.include_router(admin_auth.router)
 app.include_router(admin.router)
 app.include_router(admin_ops.router)

@@ -313,6 +313,33 @@ def test_deal_list_discovery_filters(client: TestClient) -> None:
         rating = deal["venue"].get("rating")
         assert rating is not None
         assert float(rating) >= 4
+        providers = {row["provider"] for row in deal["venue"].get("provider_ratings") or []}
+        assert "tripadvisor" in providers
+
+    yelp_stars = client.get("/api/v1/deals", params={"min_rating": "4.5", "rating_source": "yelp"})
+    assert yelp_stars.status_code == 200
+    assert yelp_stars.json()["items"]
+    for deal in yelp_stars.json()["items"]:
+        yelp = next(row for row in deal["venue"]["provider_ratings"] if row["provider"] == "yelp")
+        assert float(yelp["rating"]) >= 4.5
+
+    tripadvisor_stars = client.get("/api/v1/deals", params={"min_rating": "4.5", "rating_source": "tripadvisor"})
+    assert tripadvisor_stars.status_code == 200
+    assert tripadvisor_stars.json()["items"]
+    for deal in tripadvisor_stars.json()["items"]:
+        tripadvisor = next(row for row in deal["venue"]["provider_ratings"] if row["provider"] == "tripadvisor")
+        assert float(tripadvisor["rating"]) >= 4.5
+
+    ranked = client.get("/api/v1/deals", params={"rating_source": "google_places", "sort": "rating"})
+    assert ranked.status_code == 200
+    google_scores = [
+        float(next(row for row in deal["venue"]["provider_ratings"] if row["provider"] == "google_places")["rating"])
+        for deal in ranked.json()["items"]
+    ]
+    assert google_scores == sorted(google_scores, reverse=True)
+
+    unknown_source = client.get("/api/v1/deals", params={"rating_source": "not-a-source"})
+    assert unknown_source.status_code == 422
 
 
 def test_vertical_filter_defaults_to_food(client: TestClient) -> None:
@@ -366,3 +393,36 @@ def test_venue_list_and_slug_contract(client: TestClient) -> None:
 
     missing = client.get("/api/v1/venues/not-a-real-slug")
     assert missing.status_code == 404
+
+
+def test_map_viewport_returns_findgood_pins_without_google_ids(client: TestClient) -> None:
+    seed()
+    response = client.get(
+        "/api/v1/map/locations",
+        params={
+            "north": "34.20",
+            "south": "33.90",
+            "east": "-118.10",
+            "west": "-118.55",
+            "zoom": "12",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert "items" in body
+    lantern = next((pin for pin in body["items"] if pin["slug"] == "the-lantern-annex"), None)
+    assert lantern is not None
+    assert lantern["best_offer"]["label"]
+    slugs = [pin["slug"] for pin in body["items"]]
+    assert slugs.count("the-lantern-annex") == 1
+    assert slugs.count("harbor-rye") <= 1
+    venue = client.get("/api/v1/venues/the-lantern-annex")
+    assert venue.status_code == 200
+    providers = {link.get("provider") for link in venue.json().get("provider_ratings") or []}
+    assert "google_places" not in providers
+
+    invalid = client.get(
+        "/api/v1/map/locations",
+        params={"north": "10", "south": "20", "east": "1", "west": "0", "zoom": "12"},
+    )
+    assert invalid.status_code == 422

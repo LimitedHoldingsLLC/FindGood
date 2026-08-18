@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     admin_login_global_max_failures: int = 25
 
     feature_deal_score: bool = True
-    feature_maps: bool = False
+    feature_maps: bool = True
     feature_accounts: bool = False
     feature_community_verification: bool = False
     feature_flash_deals: bool = False
@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     yelp_max_calls_per_run: int = 20
     yelp_enabled: bool = True
 
+    tripadvisor_api_key: str = ""
+    tripadvisor_max_calls_per_run: int = 20
+    tripadvisor_enabled: bool = True
+
     opentable_api_key: str = ""
     opentable_enabled: bool = False
 
@@ -91,6 +95,17 @@ class Settings(BaseSettings):
 
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 120
+
+    map_max_results: int = 80
+    map_default_lat: float = 34.0522
+    map_default_lng: float = -118.2437
+    map_default_zoom: int = 12
+    map_cache_ttl_seconds: int = 30
+
+    geocoding_enabled: bool = True
+    geocoding_api_key: str = ""
+    max_geocodes_per_run: int = 20
+    max_geocodes_per_day: int = 100
 
     @property
     def crawler_allowed_content_type_list(self) -> list[str]:

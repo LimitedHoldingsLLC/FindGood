@@ -296,12 +296,23 @@ REVERSIBILITY: High. New tables drop in 0003 downgrade. Additive columns on venu
 ### FindGood.Food composite ratings (2026-08-17)
 
 ```text
-DECISION: Official Google Places + Yelp Fusion scores become a Bayesian composite on Venue.rating. Consumer filter is ?min_rating=. Do not scrape review sites.
-OPTIONS: Show each provider’s stars / scrape HTML reviews / composite from official APIs
-RECOMMENDATION: Composite from official APIs
-WHY: Provider terms restrict redistributing Google/Yelp stars as if they were ours. A weighted composite is FindGood.Food’s own score and stays explainable. HTML scraping would fight access controls.
-TRADEOFF: No live Tripadvisor/OpenTable stars until those have authorized adapters. Thin 5.0s shrink toward 3.8.
-REVERSIBILITY: High. 0005 downgrade drops the columns. New query param is additive.
+DECISION: Official Google Places + Yelp Fusion + Tripadvisor Content API scores become a Bayesian composite on Venue.rating. Consumer Stars filter is ?min_rating=&rating_source=&sort=. Provider stars stay on venue_provider_links and are listed additively as provider_ratings. Do not scrape review sites.
+OPTIONS: Composite only / scrape HTML reviews / official APIs plus per-source filter
+RECOMMENDATION: Official APIs plus per-source filter
+WHY: Provider terms restrict redistributing Google/Yelp/Tripadvisor stars as if they were ours. The composite is FindGood.Food’s own score. The Stars panel can still filter or sort by one official source. HTML scraping would fight access controls.
+TRADEOFF: Tripadvisor needs partner approval. OpenTable still has no authorized stars feed. Thin 5.0s shrink toward 3.8.
+REVERSIBILITY: High. 0005 downgrade drops the columns. New query params and provider_ratings are additive.
+```
+
+### FindGood map discovery (2026-08-17)
+
+```text
+DECISION: Google Maps JS is the basemap. GET /api/v1/map/locations queries VenueLocation lat/lng. One pin per FindGood location. No Places/geocode during render.
+OPTIONS: Google nearby search as inventory / Mapbox / PostGIS now
+RECOMMENDATION: Google basemap + indexed bounding box + client clustering
+WHY: Inventory must include crawler-only restaurants. Current scale does not need PostGIS. Client clustering is enough until a viewport regularly hits MAP_MAX_RESULTS after zoom-in.
+TRADEOFF: Browser Maps key is required for the visual map; the list still works without it.
+REVERSIBILITY: High. 0006 downgrade drops provenance columns. The map route is additive.
 ```
 
 ### Consumer discovery filters (2026-08-17)

@@ -44,6 +44,8 @@ class DealService:
         when: TimeBucket | None = None,
         weekday: int | None = None,
         min_rating: Decimal | None = None,
+        rating_source: str | None = None,
+        sort: str | None = None,
         page: int = 1,
         page_size: int = 20,
         now: datetime | None = None,
@@ -75,6 +77,8 @@ class DealService:
             feature=feature,
             weekday=weekday,
             min_rating=min_rating,
+            rating_source=rating_source,
+            sort=sort,
             offset=offset,
             limit=fetch_size,
         )

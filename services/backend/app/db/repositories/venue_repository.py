@@ -19,7 +19,11 @@ class VenueRepository:
         return venue
 
     def get_by_slug(self, slug: str) -> Venue:
-        stmt = select(Venue).options(selectinload(Venue.locations)).where(Venue.slug == slug)
+        stmt = (
+            select(Venue)
+            .options(selectinload(Venue.locations), selectinload(Venue.provider_links))
+            .where(Venue.slug == slug)
+        )
         venue = self.db.scalar(stmt)
         if venue is None:
             raise NotFoundError("Venue not found")
@@ -36,7 +40,7 @@ class VenueRepository:
         limit: int = 20,
     ) -> tuple[list[Venue], int]:
         filters = [Venue.status == RecordStatus.PUBLISHED]
-        stmt = select(Venue).options(selectinload(Venue.locations)).where(*filters)
+        stmt = select(Venue).options(selectinload(Venue.locations), selectinload(Venue.provider_links)).where(*filters)
         if city or neighborhood:
             stmt = stmt.join(VenueLocation)
             if city:
@@ -65,7 +69,9 @@ class VenueRepository:
         return venues, total
 
     def list_all(self) -> list[Venue]:
-        stmt = select(Venue).options(selectinload(Venue.locations)).order_by(Venue.name)
+        stmt = select(Venue).options(selectinload(Venue.locations), selectinload(Venue.provider_links)).order_by(
+            Venue.name
+        )
         return list(self.db.scalars(stmt))
 
     def add(self, venue: Venue) -> Venue:

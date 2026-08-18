@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import TypedDict
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.core.ids import new_id
 from app.core.logging import configure_logging, get_logger
@@ -32,6 +33,7 @@ from app.db.models.enums import (
 )
 from app.db.models.verification import Verification
 from app.db.session import SessionLocal
+from app.domain.geo import address_hash
 from app.domain.ratings.composite import ProviderRating, apply_to_venue
 from app.domain.venues.slug import slugify
 
@@ -78,8 +80,14 @@ def seed() -> None:
     try:
         if db.scalar(select(Venue).limit(1)):
             updated = _backfill_discovery(db)
+            created = _ensure_map_acceptance_venue(db)
             db.commit()
-            logger.info("seed_skipped", reason="venues_already_exist", discovery_backfilled=updated)
+            logger.info(
+                "seed_skipped",
+                reason="venues_already_exist",
+                discovery_backfilled=updated,
+                map_acceptance_created=created,
+            )
             return
         venues = _venues()
         db.add_all(venues)
@@ -114,6 +122,7 @@ def _venue_specs() -> list[VenueSpec]:
             "ratings": [
                 {"provider": "google_places", "rating": "4.4", "review_count": 890},
                 {"provider": "yelp", "rating": "4.0", "review_count": 412},
+                {"provider": "tripadvisor", "rating": "4.3", "review_count": 620},
             ],
             "location": {
                 "address_line1": "412 S Spring St",
@@ -139,6 +148,7 @@ def _venue_specs() -> list[VenueSpec]:
             "ratings": [
                 {"provider": "google_places", "rating": "4.6", "review_count": 210},
                 {"provider": "yelp", "rating": "4.5", "review_count": 156},
+                {"provider": "tripadvisor", "rating": "4.8", "review_count": 88},
             ],
             "location": {
                 "address_line1": "2814 Sunset Blvd",
@@ -164,6 +174,7 @@ def _venue_specs() -> list[VenueSpec]:
             "ratings": [
                 {"provider": "google_places", "rating": "4.7", "review_count": 640},
                 {"provider": "yelp", "rating": "4.3", "review_count": 280},
+                {"provider": "tripadvisor", "rating": "4.5", "review_count": 410},
             ],
             "location": {
                 "address_line1": "1624 Ocean Ave",
@@ -189,6 +200,7 @@ def _venue_specs() -> list[VenueSpec]:
             "ratings": [
                 {"provider": "google_places", "rating": "4.2", "review_count": 180},
                 {"provider": "yelp", "rating": "4.0", "review_count": 95},
+                {"provider": "tripadvisor", "rating": "3.9", "review_count": 72},
             ],
             "location": {
                 "address_line1": "1862 Hillhurst Ave",
@@ -214,6 +226,7 @@ def _venue_specs() -> list[VenueSpec]:
             "ratings": [
                 {"provider": "google_places", "rating": "3.9", "review_count": 320},
                 {"provider": "yelp", "rating": "3.8", "review_count": 210},
+                {"provider": "tripadvisor", "rating": "3.6", "review_count": 145},
             ],
             "location": {
                 "address_line1": "1518 Echo Park Ave",
@@ -223,6 +236,28 @@ def _venue_specs() -> list[VenueSpec]:
                 "neighborhood": "Echo Park",
                 "latitude": Decimal("34.078800"),
                 "longitude": Decimal("-118.256900"),
+            },
+        },
+        {
+            "name": "The Lantern Annex",
+            "description": "A FindGood-only fictional Hollywood wine room. Not listed on Google or Yelp.",
+            "website_url": "https://lanternannex.example",
+            "phone": "323-555-0166",
+            "category": "wine_bar",
+            "cuisines": ["bar", "mediterranean"],
+            "price_level": 2,
+            "drink_kinds": ["wine", "natural_wine"],
+            "accepts_reservations": False,
+            "features": ["walk_in"],
+            "ratings": [],
+            "location": {
+                "address_line1": "123 Example Street",
+                "city": "Los Angeles",
+                "region": "CA",
+                "postal_code": "90028",
+                "neighborhood": "Hollywood",
+                "latitude": Decimal("34.101600"),
+                "longitude": Decimal("-118.326800"),
             },
         },
     ]
@@ -247,16 +282,25 @@ def _venues() -> list[Venue]:
             vertical="food",
             status=RecordStatus.PUBLISHED,
         )
+        loc = spec["location"]
+        now = datetime.now(UTC)
         venue.locations.append(
             VenueLocation(
                 id=new_id(),
                 label="Main",
                 timezone="America/Los_Angeles",
                 status=RecordStatus.PUBLISHED,
-                **spec["location"],
+                location_confidence="verified" if spec["name"] == "The Lantern Annex" else "high_confidence",
+                geocode_source="manual" if spec["name"] == "The Lantern Annex" else "seed",
+                geocode_accuracy="rooftop",
+                geocoded_at=now,
+                coordinates_verified_at=now if spec["name"] == "The Lantern Annex" else None,
+                address_hash=address_hash(loc["address_line1"], loc["city"], loc["region"], loc["postal_code"]),
+                **loc,
             )
         )
-        _apply_seed_ratings(venue, spec["ratings"])
+        if spec["ratings"]:
+            _apply_seed_ratings(venue, spec["ratings"])
         venues.append(venue)
     return venues
 
@@ -265,7 +309,7 @@ def _backfill_discovery(db) -> int:
     """Fill discovery columns on existing seed venues so local DBs pick up new filters."""
     by_name = {spec["name"]: spec for spec in _venue_specs()}
     updated = 0
-    for venue in db.scalars(select(Venue)):
+    for venue in db.scalars(select(Venue).options(selectinload(Venue.provider_links))):
         spec = by_name.get(venue.name)
         if spec is None:
             continue
@@ -277,9 +321,38 @@ def _backfill_discovery(db) -> int:
             venue.accepts_reservations = spec["accepts_reservations"]
             venue.features = spec["features"]
             changed = True
-        if getattr(venue, "rating", None) is None and spec.get("ratings"):
-            apply_to_venue(venue, _provider_ratings(spec["ratings"]))
-            changed = True
+        for location in venue.locations:
+            if not getattr(location, "geocode_source", None):
+                location.geocode_source = "manual" if venue.name == "The Lantern Annex" else "seed"
+                location.location_confidence = "verified" if venue.name == "The Lantern Annex" else "high_confidence"
+                location.address_hash = address_hash(
+                    location.address_line1, location.city, location.region, location.postal_code
+                )
+                location.geocoded_at = datetime.now(UTC)
+                changed = True
+        ratings = spec.get("ratings") or []
+        if ratings:
+            existing = {link.provider for link in venue.provider_links}
+            missing = [item for item in ratings if item["provider"] not in existing]
+            if missing:
+                now = datetime.now(UTC)
+                for item in missing:
+                    venue.provider_links.append(
+                        VenueProviderLink(
+                            id=new_id(),
+                            provider=item["provider"],
+                            provider_business_id=f"seed:{slugify(venue.name)}:{item['provider']}",
+                            rating=Decimal(item["rating"]),
+                            review_count=item["review_count"],
+                            first_seen_at=now,
+                            last_seen_at=now,
+                            extra_metadata={"seed": True},
+                        )
+                    )
+            source_count = int(getattr(venue, "rating_source_count", 0) or 0)
+            if missing or getattr(venue, "rating", None) is None or source_count < len(ratings):
+                apply_to_venue(venue, _provider_ratings(ratings))
+                changed = True
         if changed:
             updated += 1
     return updated
@@ -312,6 +385,127 @@ def _apply_seed_ratings(venue: Venue, specs: list[RatingSpec]) -> None:
             )
         )
     apply_to_venue(venue, _provider_ratings(specs))
+
+
+def _ensure_map_acceptance_venue(db) -> bool:
+    """Guarantee the non-Google Hollywood pin exists on databases that already have seed rows."""
+    existing = db.scalar(select(Venue).where(Venue.slug == "the-lantern-annex"))
+    if existing is not None:
+        return False
+    specs = [spec for spec in _venue_specs() if spec["name"] == "The Lantern Annex"]
+    venues = []
+    for spec in specs:
+        venue = Venue(
+            id=new_id(),
+            name=spec["name"],
+            slug=slugify(spec["name"]),
+            description=spec["description"],
+            website_url=spec["website_url"],
+            phone=spec["phone"],
+            primary_category=spec["category"],
+            cuisines=spec["cuisines"],
+            price_level=spec["price_level"],
+            drink_kinds=spec["drink_kinds"],
+            accepts_reservations=spec["accepts_reservations"],
+            features=spec["features"],
+            vertical="food",
+            status=RecordStatus.PUBLISHED,
+        )
+        loc = spec["location"]
+        now = datetime.now(UTC)
+        venue.locations.append(
+            VenueLocation(
+                id=new_id(),
+                label="Main",
+                timezone="America/Los_Angeles",
+                status=RecordStatus.PUBLISHED,
+                location_confidence="verified",
+                geocode_source="manual",
+                geocode_accuracy="rooftop",
+                geocoded_at=now,
+                coordinates_verified_at=now,
+                address_hash=address_hash(loc["address_line1"], loc["city"], loc["region"], loc["postal_code"]),
+                **loc,
+            )
+        )
+        venues.append(venue)
+    db.add_all(venues)
+    db.flush()
+    _add_lantern_offer(db, venues[0])
+    return True
+
+
+def _add_lantern_offer(db, venue: Venue) -> None:
+    source = Source(
+        id=new_id(),
+        venue_id=venue.id,
+        source_type=SourceType.MANUAL,
+        url="manual://lantern-annex",
+        canonical_identity="manual://lantern-annex",
+        is_active=True,
+        crawl_enabled=False,
+        trust_level=TrustLevel.HIGH,
+    )
+    db.add(source)
+    db.flush()
+    location = venue.locations[0]
+    deal = Deal(
+        id=new_id(),
+        venue_location_id=location.id,
+        title="Annex hour",
+        description="House pours at a Hollywood wine room that only exists in FindGood.",
+        deal_type=DealType.HAPPY_HOUR,
+        offering_kind=DealOfferingKind.DRINK,
+        vertical="food",
+        status=RecordStatus.PUBLISHED,
+        publication_state=PublicationState.PUBLISHED,
+        source_confidence=Decimal("0.900"),
+        freshness_status="fresh",
+        last_verified_at=datetime.now(UTC),
+    )
+    db.add(deal)
+    db.flush()
+    db.add(
+        DealSchedule(
+            id=new_id(),
+            deal_id=deal.id,
+            days_of_week=WEEKDAYS,
+            start_time=time(16, 0),
+            end_time=time(19, 0),
+        )
+    )
+    db.add(
+        DealItem(
+            id=new_id(),
+            deal_id=deal.id,
+            name="House martini",
+            category="drink",
+            normal_price=Decimal("16.00"),
+            deal_price=Decimal("6.00"),
+            currency="USD",
+        )
+    )
+    db.add(
+        DealPublication(
+            id=new_id(),
+            deal_id=deal.id,
+            source_id=source.id,
+            published_by="seed",
+            notes="Non-Google map acceptance venue",
+        )
+    )
+    db.add(
+        Verification(
+            id=new_id(),
+            subject_type="deal",
+            subject_id=deal.id,
+            verification_type=VerificationType.MANUAL,
+            verified_at=datetime.now(UTC),
+            actor="seed",
+            notes="Fictional seed verification — not a real-world claim",
+            confidence=Decimal("1.000"),
+        )
+    )
 
 
 def _catalog(venues: list[Venue]):
@@ -353,6 +547,7 @@ def _catalog(venues: list[Venue]):
         offer_items: list[tuple[str, str, str, str]],
         source: Source,
         publication_state: str = PublicationState.PUBLISHED,
+        freshness_status: str = "fresh",
     ) -> Deal:
         location = venue.locations[0]
         deal = Deal(
@@ -366,6 +561,8 @@ def _catalog(venues: list[Venue]):
             status=RecordStatus.PUBLISHED,
             publication_state=publication_state,
             source_confidence=Decimal("0.900"),
+            freshness_status=freshness_status,
+            last_verified_at=datetime.now(UTC),
         )
         deals.append(deal)
         schedules.append(
@@ -420,12 +617,14 @@ def _catalog(venues: list[Venue]):
     pearl = by_name["The Pearl Counter"]
     sunday = by_name["Sunday Provisions"]
     nightbird = by_name["Nightbird Room"]
+    lantern = by_name["The Lantern Annex"]
 
     harbor_source = add_source(harbor, SourceType.MANUAL, "manual://harbor-and-rye")
     casa_source = add_source(casa, SourceType.MANUAL, "manual://casa-nube")
     pearl_source = add_source(pearl, SourceType.MANUAL, "manual://pearl-counter")
     sunday_source = add_source(sunday, SourceType.MANUAL, "manual://sunday-provisions")
     nightbird_source = add_source(nightbird, SourceType.MANUAL, "manual://nightbird-room")
+    lantern_source = add_source(lantern, SourceType.MANUAL, "manual://lantern-annex")
     add_source(harbor, SourceType.DEMO, "demo://harbor-and-rye", crawl=True)
     add_source(nightbird, SourceType.DEMO, "demo://nightbird-new-special", crawl=True)
 
@@ -528,6 +727,18 @@ def _catalog(venues: list[Venue]):
         ends_at_close=True,
         offer_items=[("Highball", "drink", "14.00", "8.00")],
         source=nightbird_source,
+    )
+    add_deal(
+        lantern,
+        title="Annex hour",
+        description="House pours at a Hollywood wine room that only exists in FindGood.",
+        deal_type=DealType.HAPPY_HOUR,
+        offering_kind=DealOfferingKind.DRINK,
+        days=WEEKDAYS,
+        start=time(16, 0),
+        end=time(19, 0),
+        offer_items=[("House martini", "drink", "16.00", "6.00")],
+        source=lantern_source,
     )
     add_deal(
         nightbird,

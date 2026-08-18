@@ -62,6 +62,12 @@ Never commit `.env`. Templates: [`.env.example`](../.env.example), [`apps/web/.e
 | `NEXT_PUBLIC_API_BASE_URL` | food app | no (public) |
 | `NEXT_PUBLIC_SITE_URL` | food app | no (public) |
 | `NEXT_PUBLIC_CANONICAL_HOST` | food app | no (public) |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | food app / Vercel | no (public, restrict by HTTP referrer) |
+| `NEXT_PUBLIC_GOOGLE_MAP_ID` | food app / Vercel | no (optional Cloud Map style) |
+| `NEXT_PUBLIC_MAP_DEFAULT_*` | food app | no |
+| `FEATURE_MAPS` | API | no |
+| `GEOCODING_API_KEY`, `GEOCODING_ENABLED`, `MAX_GEOCODES_*` | API / worker | yes / no |
+| `MAP_MAX_RESULTS`, `MAP_CACHE_TTL_SECONDS` | API | no |
 
 `NEXT_PUBLIC_*` is inlined into the browser bundle. Never put admin passwords, session secrets, or database URLs there.
 
@@ -94,3 +100,42 @@ The existing hourly cron stays enqueue-only. It now also enqueues freshness dete
 Operator runbook: [`docs/OPERATOR.md`](./OPERATOR.md).
 
 Current Render plans in `render.yaml` are free API/worker/Postgres/KV plus a starter cron. Do not add paid search, a second database, or Kubernetes. Upgrade a specific process when that process is the bottleneck. Do not create extra paid Render services automatically.
+
+## Google Cloud for the consumer map
+
+The map uses Google only as a drawing layer. FindGood’s database decides which restaurants appear. Opening `/map` should not call Places or Geocoding.
+
+### What to enable
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/).
+2. Create or pick a project (for example `findgood-food`).
+3. Enable **billing** on that project. Maps APIs will not serve without it.
+4. APIs & Services → Library → enable:
+   - **Maps JavaScript API** — required for the visible map.
+   - **Geocoding API** — optional, only for background address enrichment on the worker. Do **not** enable this if you are not ready to pay for geocodes.
+5. Do **not** enable Places just to draw markers. Places stays an ingestion enrichment, not a map-render dependency.
+
+### Browser key (Vercel)
+
+1. APIs & Services → Credentials → Create credentials → API key.
+2. Restrict the key:
+   - Application restrictions → **HTTP referrers**.
+   - Add `https://findgood.food/*`, `https://www.findgood.food/*`, and `http://localhost:3000/*` for local work.
+   - API restrictions → restrict to **Maps JavaScript API**.
+3. Paste the key into Vercel as `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
+
+A **Map ID** is an optional Cloud style id (Map Management). If you create one, put it in Vercel as `NEXT_PUBLIC_GOOGLE_MAP_ID`. The app already ships a quieter FindGood style without it.
+
+### Server key (Render)
+
+Create a **second** key for the API/worker if you turn geocoding on:
+
+- Application restrictions → **IP addresses** (Render outbound) or none while you are small, then tighten.
+- API restrictions → **Geocoding API** only.
+- Paste into Render as `GEOCODING_API_KEY`. Never put this value in `NEXT_PUBLIC_*`.
+
+Set `GEOCODING_ENABLED=true` and keep `MAX_GEOCODES_PER_RUN` / `MAX_GEOCODES_PER_DAY` low until you trust the queue.
+
+### What does not belong on Vercel
+
+Database URLs, admin passwords, Places keys, and `GEOCODING_API_KEY` stay on Render. The browser only needs the Maps JavaScript key.

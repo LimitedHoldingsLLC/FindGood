@@ -7,6 +7,7 @@ renames a DealOut / VenueOut field before the food TypeScript client is updated.
 import inspect
 
 from app.api.routes.deals import list_deals
+from app.api.routes.map import list_map_locations
 from app.api.schemas import (
     AvailabilityOut,
     DealItemOut,
@@ -14,6 +15,8 @@ from app.api.schemas import (
     DealOut,
     DealScheduleOut,
     LocationOut,
+    MapListOut,
+    MapPinOut,
     Pagination,
     VenueCardOut,
     VenueListOut,
@@ -102,5 +105,25 @@ def test_deal_list_accepts_vertical_query() -> None:
 
 def test_deal_list_accepts_discovery_filters() -> None:
     params = inspect.signature(list_deals).parameters
-    for name in ("q", "cuisine", "price_level", "drink", "reservations", "feature", "when", "day", "min_rating"):
+    for name in (
+        "q",
+        "cuisine",
+        "price_level",
+        "drink",
+        "reservations",
+        "feature",
+        "when",
+        "day",
+        "min_rating",
+        "rating_source",
+        "sort",
+    ):
         assert name in params
+
+
+def test_map_viewport_endpoint_is_additive() -> None:
+    params = inspect.signature(list_map_locations).parameters
+    for name in ("north", "south", "east", "west", "zoom", "when", "q"):
+        assert name in params
+    assert {"items", "result_count", "truncated", "zoom_required"} <= set(MapListOut.model_fields)
+    assert {"id", "venue_id", "slug", "name", "lat", "lng", "best_offer"} <= set(MapPinOut.model_fields)

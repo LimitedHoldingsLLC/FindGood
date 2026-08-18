@@ -9,8 +9,17 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 export function AppChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
   const isAdmin = path.startsWith("/admin");
+  const isMap = path === "/map";
   if (isAdmin) {
     return <>{children}</>;
+  }
+  if (isMap) {
+    return (
+      <div className="flex h-dvh flex-col overflow-hidden">
+        <SiteHeader compact />
+        <main className="relative min-h-0 flex-1">{children}</main>
+      </div>
+    );
   }
   return (
     <>

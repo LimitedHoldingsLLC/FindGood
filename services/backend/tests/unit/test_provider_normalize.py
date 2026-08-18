@@ -2,6 +2,7 @@ from datetime import UTC
 from decimal import Decimal
 
 from app.ingestion.providers.google_places import GooglePlacesAdapter
+from app.ingestion.providers.tripadvisor import TripadvisorAdapter
 from app.ingestion.providers.yelp import YelpAdapter
 
 
@@ -67,3 +68,34 @@ def test_yelp_business_normalizes_to_same_shape() -> None:
     assert business.provider_business_id == "abc123"
     assert business.location.region == "CA"
     assert business.location.timezone == "America/Los_Angeles"
+
+
+def test_tripadvisor_location_normalizes_to_same_shape() -> None:
+    adapter = TripadvisorAdapter(api_key="test", client=None)  # type: ignore[arg-type]
+    row = {
+        "location_id": "123456",
+        "name": "Harbor & Rye",
+        "web_url": "https://www.tripadvisor.com/Restaurant_Review-harbor",
+        "website": "https://harborandrye.example",
+        "phone": "(213) 555-0142",
+        "rating": "4.5",
+        "num_reviews": "210",
+        "latitude": "34.09",
+        "longitude": "-118.28",
+        "address_obj": {
+            "street1": "123 Sunset Blvd",
+            "city": "Los Angeles",
+            "state": "CA",
+            "postalcode": "90026",
+            "country": "United States",
+            "address_string": "123 Sunset Blvd, Los Angeles, CA 90026",
+        },
+    }
+    business = adapter._normalize(row)
+    assert business is not None
+    assert business.provider == "tripadvisor"
+    assert business.provider_business_id == "123456"
+    assert business.location.city == "Los Angeles"
+    assert business.location.latitude == Decimal("34.09")
+    assert business.rating == Decimal("4.5")
+    assert business.review_count == 210

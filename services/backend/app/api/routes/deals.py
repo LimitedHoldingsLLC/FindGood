@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import deal_service_dep
 from app.api.schemas import DealListOut, DealOut
-from app.domain.taxonomy.discovery import Cuisine, DrinkKind, TimeBucket, VenueFeature
+from app.domain.taxonomy.discovery import Cuisine, DealSort, DrinkKind, RatingSource, TimeBucket, VenueFeature
 from app.domain.taxonomy.verticals import Vertical
 from app.services.deal_service import DealService
 
@@ -34,6 +34,8 @@ def list_deals(
     when: TimeBucket | None = None,
     day: int | None = Query(default=None, ge=1, le=7),
     min_rating: Decimal | None = Query(default=None, ge=1, le=5),
+    rating_source: RatingSource | None = None,
+    sort: DealSort | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
     service: DealService = Depends(deal_service_dep),
@@ -59,6 +61,8 @@ def list_deals(
         when=when,
         weekday=day,
         min_rating=min_rating,
+        rating_source=rating_source.value if rating_source else None,
+        sort=sort.value if sort else None,
         page=page,
         page_size=page_size,
     )

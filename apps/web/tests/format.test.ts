@@ -46,6 +46,7 @@ describe("formatRating", () => {
 describe("ratingSourceLabel", () => {
   it("names official providers without calling them FindGood scores", () => {
     expect(ratingSourceLabel(["google_places", "yelp"])).toBe("Google and Yelp");
+    expect(ratingSourceLabel(["google_places", "yelp", "tripadvisor"])).toBe("Google, Yelp, and Tripadvisor");
   });
 });
 

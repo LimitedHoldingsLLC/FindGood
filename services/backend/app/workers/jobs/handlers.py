@@ -11,6 +11,7 @@ from app.workers.queue import (
     JOB_DETECT_STALE,
     JOB_ENQUEUE_STALE,
     JOB_EXPIRE_PROMOTIONS,
+    JOB_GEOCODE_ENRICH,
     JOB_PROVIDER_REFRESH,
     JOB_PROVIDER_SEARCH,
     JOB_QUEUE_STALE_REFRESH,
@@ -50,6 +51,9 @@ def handle_job(job: Job, queue: JobQueue, settings: Settings) -> None:
     if job.name == JOB_QUEUE_STALE_REFRESH:
         _queue_stale_refresh(queue, settings)
         return
+    if job.name == JOB_GEOCODE_ENRICH:
+        _geocode_enrich(settings)
+        return
     raise ValueError(f"Unknown job: {job.name}")
 
 
@@ -76,6 +80,7 @@ def _enqueue_stale(queue: JobQueue) -> None:
             enqueue_source_refresh(queue, str(source.id))
         enqueue_named(queue, JOB_DETECT_STALE, {})
         enqueue_named(queue, JOB_EXPIRE_PROMOTIONS, {})
+        enqueue_named(queue, JOB_GEOCODE_ENRICH, {}, idempotency_key="geocode:hourly")
         logger.info("stale_sources_enqueued", count=len(sources))
     finally:
         db.close()
@@ -191,5 +196,23 @@ def _queue_stale_refresh(queue: JobQueue, settings: Settings) -> None:
                     {"url": venue.website_url, "venue_id": str(venue.id), "requested_by": "scheduler"},
                     idempotency_key=f"stale-crawl:{venue.id}",
                 )
+    finally:
+        db.close()
+
+
+def _geocode_enrich(settings: Settings) -> None:
+    from app.adapters.maps import geocoding_adapter
+    from app.ingestion.geocode import GeocodeEnricher
+
+    db = SessionLocal()
+    try:
+        key = settings.geocoding_api_key or settings.google_places_api_key
+        adapter = geocoding_adapter(api_key=key, enabled=settings.geocoding_enabled)
+        result = GeocodeEnricher(db, adapter, max_calls=settings.max_geocodes_per_run).run()
+        db.commit()
+        logger.info("geocode_enrichment_finished", **result)
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

@@ -11,6 +11,8 @@ from app.api.admin_schemas import (
     ErrorGroupOut,
     FreshnessBucketOut,
     IngestionRunOut,
+    LocationCoordinateIn,
+    MapQualityOut,
     NotesIn,
     OpsDealOut,
     OpsOverviewOut,
@@ -90,6 +92,15 @@ def refresh_yelp(
     principal: Principal = Depends(admin_principal),
 ) -> IngestionRunOut:
     return service.refresh_provider("yelp", venue_id, actor=principal.subject)
+
+
+@router.post("/ops/venues/{venue_id}/refresh-tripadvisor", response_model=IngestionRunOut)
+def refresh_tripadvisor(
+    venue_id: UUID,
+    service: OpsService = Depends(ops_service_dep),
+    principal: Principal = Depends(admin_principal),
+) -> IngestionRunOut:
+    return service.refresh_provider("tripadvisor", venue_id, actor=principal.subject)
 
 
 @router.get("/ops/deals", response_model=PageOut)
@@ -185,6 +196,23 @@ def yelp_search(
 ) -> IngestionRunOut:
     return service.queue_provider_search(
         "yelp",
+        text=payload.text,
+        city=payload.city,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        requested_by=principal.subject,
+        sync=payload.sync,
+    )
+
+
+@router.post("/ingestion/tripadvisor/search", response_model=IngestionRunOut)
+def tripadvisor_search(
+    payload: ProviderSearchIn,
+    service: OpsService = Depends(ops_service_dep),
+    principal: Principal = Depends(admin_principal),
+) -> IngestionRunOut:
+    return service.queue_provider_search(
+        "tripadvisor",
         text=payload.text,
         city=payload.city,
         latitude=payload.latitude,
@@ -294,6 +322,30 @@ def crawler_domains(service: OpsService = Depends(ops_service_dep)) -> list[Craw
 @router.get("/system", response_model=SystemHealthOut)
 def system_health(service: OpsService = Depends(ops_service_dep)) -> SystemHealthOut:
     return service.system_health()
+
+
+@router.get("/map/quality", response_model=MapQualityOut)
+def map_quality(service: OpsService = Depends(ops_service_dep)) -> MapQualityOut:
+    return service.map_quality()
+
+
+@router.patch("/ops/locations/{location_id}/coordinates")
+def update_location_coordinates(
+    location_id: UUID,
+    payload: LocationCoordinateIn,
+    service: OpsService = Depends(ops_service_dep),
+    principal: Principal = Depends(admin_principal),
+) -> dict:
+    return service.update_location_coordinates(location_id, payload, actor=principal.subject)
+
+
+@router.post("/ops/locations/{location_id}/re-geocode")
+def regeocode_location(
+    location_id: UUID,
+    service: OpsService = Depends(ops_service_dep),
+    principal: Principal = Depends(admin_principal),
+) -> dict:
+    return service.queue_regeocode(location_id, actor=principal.subject)
 
 
 @router.get("/audit", response_model=list[AuditOut])

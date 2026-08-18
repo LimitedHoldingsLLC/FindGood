@@ -64,6 +64,13 @@ class VenueLocation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     longitude: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="America/Los_Angeles")
     status: Mapped[str] = mapped_column(String(32), default=RecordStatus.PUBLISHED, index=True)
+    location_confidence: Mapped[str] = mapped_column(String(32), default="high_confidence", index=True)
+    geocode_source: Mapped[str | None] = mapped_column(String(40))
+    geocode_accuracy: Mapped[str | None] = mapped_column(String(40))
+    coordinates_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    geocoded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    address_hash: Mapped[str | None] = mapped_column(String(64))
+    map_demand_count: Mapped[int] = mapped_column(Integer, default=0)
 
     venue: Mapped[Venue] = relationship(back_populates="locations")
     deals: Mapped[list["Deal"]] = relationship(back_populates="venue_location")

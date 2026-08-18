@@ -24,7 +24,10 @@ export default function HealthPage() {
     ["Crawler", data.crawler],
     ["Google Places", data.google],
     ["Yelp", data.yelp],
+    ["Tripadvisor", data.tripadvisor ?? "not configured"],
     ["OpenTable", data.opentable],
+    ["Maps", data.maps ?? "healthy"],
+    ["Geocoding", data.geocoding ?? "not configured"],
   ] as const;
 
   function tone(value: string) {

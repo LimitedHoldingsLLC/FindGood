@@ -33,17 +33,33 @@ export function formatRating(value: string | null | undefined): string | null {
   return amount.toFixed(1);
 }
 
+export function providerLabel(provider: string): string {
+  if (provider === "google_places") return "Google";
+  if (provider === "yelp") return "Yelp";
+  if (provider === "tripadvisor") return "Tripadvisor";
+  if (provider === "findgood") return "FindGood.Food";
+  return titleCaseKey(provider);
+}
+
 export function ratingSourceLabel(providers: string[] | undefined): string | null {
   if (!providers?.length) return null;
-  const names = providers.map((provider) => {
-    if (provider === "google_places") return "Google";
-    if (provider === "yelp") return "Yelp";
-    if (provider === "tripadvisor") return "Tripadvisor";
-    return titleCaseKey(provider);
-  });
+  const names = providers.map(providerLabel);
   if (names.length === 1) return names[0];
   if (names.length === 2) return `${names[0]} and ${names[1]}`;
   return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
+
+export function compactProviderRatings(
+  ratings: { provider: string; rating?: string | null }[] | undefined,
+): string | null {
+  if (!ratings?.length) return null;
+  const parts = ratings
+    .map((row) => {
+      const stars = formatRating(row.rating);
+      return stars ? `${providerLabel(row.provider)} ${stars}` : null;
+    })
+    .filter((part): part is string => Boolean(part));
+  return parts.length ? parts.join(" · ") : null;
 }
 
 export function titleCaseKey(value: string): string {

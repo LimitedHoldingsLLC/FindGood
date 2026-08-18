@@ -1,5 +1,6 @@
 """Small geographic helpers used by matching and freshness — no HTTP, no FastAPI."""
 
+import hashlib
 from decimal import Decimal
 from math import asin, cos, radians, sin, sqrt
 
@@ -21,3 +22,8 @@ def optional_haversine_km(
     if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
         return None
     return haversine_km(float(lat1), float(lon1), float(lat2), float(lon2))
+
+
+def address_hash(address_line1: str, city: str, region: str, postal_code: str) -> str:
+    raw = "|".join(part.strip().casefold() for part in (address_line1, city, region, postal_code))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]

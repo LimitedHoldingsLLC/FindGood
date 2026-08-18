@@ -18,6 +18,7 @@ JOB_PROVIDER_REFRESH = "provider.refresh"
 JOB_DETECT_STALE = "freshness.detect_stale"
 JOB_EXPIRE_PROMOTIONS = "freshness.expire"
 JOB_QUEUE_STALE_REFRESH = "freshness.queue_refresh"
+JOB_GEOCODE_ENRICH = "location.geocode"
 
 
 @dataclass

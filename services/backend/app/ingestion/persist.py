@@ -20,6 +20,7 @@ from app.db.models.enums import RecordStatus, SourceType, TrustLevel
 from app.domain.duplicates.matcher import SimpleDuplicateMatcher, VenueIdentity, classify_match
 from app.domain.ingestion.schemas import NormalizedBusiness
 from app.domain.ratings.composite import apply_to_venue, ratings_from_links
+from app.domain.geo import address_hash
 from app.domain.venues.slug import slugify
 from app.domain.verification.policy import next_refresh_after_success, windows_from_settings
 
@@ -149,6 +150,10 @@ class BusinessPersister:
                 latitude=loc.latitude,
                 longitude=loc.longitude,
                 timezone=loc.timezone,
+                location_confidence="high_confidence",
+                geocode_source=f"provider_{business.provider}",
+                geocoded_at=now,
+                address_hash=address_hash(loc.address_line1, loc.city, loc.region, loc.postal_code),
             )
         )
         if business.website_url:
@@ -224,7 +229,7 @@ def _as_identity(business: NormalizedBusiness) -> VenueIdentity:
 
 def _provider_meta(business: NormalizedBusiness) -> dict:
     # Provider-owned scores stay on the link. The public venue.rating is a
-    # FindGood.Food composite, not a Google or Yelp clone.
+    # FindGood.Food composite, not a Google, Yelp, or Tripadvisor clone.
     return {
         "rating": str(business.rating) if business.rating is not None else None,
         "review_count": business.review_count,

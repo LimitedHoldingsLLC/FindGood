@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.services.admin_service import AdminService
 from app.services.deal_service import DealService
 from app.services.ops_service import OpsService
+from app.services.map_service import MapService
 from app.services.venue_service import VenueService
 from app.workers.queue import JobQueue, get_queue
 
@@ -32,6 +33,10 @@ def deal_service_dep(db: Session = Depends(db_dep), flags: FeatureFlags = Depend
 
 def venue_service_dep(db: Session = Depends(db_dep), flags: FeatureFlags = Depends(flags_dep)) -> VenueService:
     return VenueService(db, flags)
+
+
+def map_service_dep(db: Session = Depends(db_dep), settings: Settings = Depends(settings_dep)) -> MapService:
+    return MapService(db, settings)
 
 
 def admin_service_dep(db: Session = Depends(db_dep), flags: FeatureFlags = Depends(flags_dep)) -> AdminService:

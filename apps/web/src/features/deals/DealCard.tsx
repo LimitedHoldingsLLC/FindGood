@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { Deal } from "@/lib/api/types";
-import { formatRating, priceLevelLabel, primaryPrice, titleCaseKey } from "@/lib/format";
+import { compactProviderRatings, formatRating, priceLevelLabel, primaryPrice, titleCaseKey } from "@/lib/format";
 
 const KIND_LABEL: Record<string, string> = {
   food: "Food",
@@ -12,6 +12,7 @@ const KIND_LABEL: Record<string, string> = {
 
 export function DealCard({ deal }: { deal: Deal }) {
   const price = primaryPrice(deal.items);
+  const providerStars = compactProviderRatings(deal.venue.provider_ratings);
   return (
     <Link
       href={`/venues/${deal.venue.slug}`}
@@ -32,6 +33,7 @@ export function DealCard({ deal }: { deal: Deal }) {
         {deal.venue.cuisines?.[0] ? ` · ${titleCaseKey(deal.venue.cuisines[0])}` : ""}
         {formatRating(deal.venue.rating) ? ` · ★ ${formatRating(deal.venue.rating)}` : ""}
       </p>
+      {providerStars ? <p className="mt-1 text-xs text-muted">{providerStars}</p> : null}
       {deal.description ? (
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-ink/80">{deal.description}</p>
       ) : null}

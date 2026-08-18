@@ -14,6 +14,8 @@ export type FilterState = {
   day?: string;
   dealType?: string;
   minRating?: string;
+  ratingSource?: string;
+  sort?: string;
 };
 
 export const CUISINES = [
@@ -95,6 +97,13 @@ export const RATINGS = [
   { value: "4.5", label: "4.5+" },
 ] as const;
 
+export const RATING_SOURCES = [
+  { value: "findgood", label: "FindGood.Food" },
+  { value: "google_places", label: "Google" },
+  { value: "yelp", label: "Yelp" },
+  { value: "tripadvisor", label: "Tripadvisor" },
+] as const;
+
 export const NEIGHBORHOOD_OPTIONS = NEIGHBORHOODS.map((name) => ({ value: name, label: name }));
 
 export function filterHref(city: string, next: FilterState): string {
@@ -112,6 +121,8 @@ export function filterHref(city: string, next: FilterState): string {
   if (next.day) params.set("day", next.day);
   if (next.dealType) params.set("deal_type", next.dealType);
   if (next.minRating) params.set("min_rating", next.minRating);
+  if (next.ratingSource && next.ratingSource !== "findgood") params.set("rating_source", next.ratingSource);
+  if (next.sort === "rating") params.set("sort", "rating");
   const query = params.toString();
   const base = city === "Los Angeles" ? "/" : `/${city.toLowerCase().replace(/\s+/g, "-")}`;
   return query ? `${base}?${query}` : base;
@@ -131,8 +142,20 @@ export function hasActiveFilters(state: FilterState): boolean {
       state.when ||
       state.day ||
       state.dealType ||
-      state.minRating,
+      state.minRating ||
+      (state.ratingSource && state.ratingSource !== "findgood") ||
+      state.sort === "rating",
   );
+}
+
+export function ratingTriggerLabel(state: FilterState): string {
+  const parts: string[] = [];
+  if (state.minRating) parts.push(`${state.minRating}+`);
+  if (state.ratingSource && state.ratingSource !== "findgood") {
+    parts.push(labelFor(RATING_SOURCES, state.ratingSource) ?? state.ratingSource);
+  }
+  if (state.sort === "rating") parts.push("Highest");
+  return parts.length ? parts.join(" · ") : "Stars";
 }
 
 export function labelFor(options: readonly { value: string; label: string }[], value?: string): string | undefined {

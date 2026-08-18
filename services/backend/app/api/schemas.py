@@ -74,6 +74,12 @@ class DealScheduleOut(APIModel):
     valid_until: date | None
 
 
+class ProviderRatingOut(APIModel):
+    provider: str
+    rating: Decimal | None = None
+    review_count: int | None = None
+
+
 class VenueCardOut(APIModel):
     id: UUID
     name: str
@@ -92,6 +98,7 @@ class VenueCardOut(APIModel):
     rating_review_count: int = 0
     rating_source_count: int = 0
     rating_providers: list[str] = Field(default_factory=list)
+    provider_ratings: list[ProviderRatingOut] = Field(default_factory=list)
 
 
 class DealOut(APIModel):
@@ -149,9 +156,41 @@ class VenueOut(APIModel):
     rating_review_count: int = 0
     rating_source_count: int = 0
     rating_providers: list[str] = Field(default_factory=list)
+    provider_ratings: list[ProviderRatingOut] = Field(default_factory=list)
     locations: list[LocationOut]
     current_deals: list[DealOut] = Field(default_factory=list)
     upcoming_deals: list[DealOut] = Field(default_factory=list)
+
+
+class MapOfferOut(APIModel):
+    id: UUID
+    label: str
+    title: str
+    freshness: str
+    availability_status: str
+    availability_label: str
+    extra_offer_count: int = 0
+
+
+class MapPinOut(APIModel):
+    id: UUID
+    venue_id: UUID
+    slug: str
+    name: str
+    lat: Decimal
+    lng: Decimal
+    neighborhood: str | None = None
+    category: str
+    location_confidence: str
+    best_offer: MapOfferOut | None = None
+
+
+class MapListOut(APIModel):
+    items: list[MapPinOut]
+    result_count: int
+    truncated: bool = False
+    zoom_required: bool = False
+    cache_hit: bool = False
 
 
 class DealListOut(APIModel):

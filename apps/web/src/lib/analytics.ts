@@ -6,7 +6,13 @@ type EventName =
   | "deal_saved"
   | "deal_shared"
   | "source_reported_wrong"
-  | "location_changed";
+  | "location_changed"
+  | "map_opened"
+  | "search_area_clicked"
+  | "map_marker_clicked"
+  | "map_filter_changed"
+  | "map_location_requested"
+  | "map_to_detail_conversion";
 
 type AnalyticsAdapter = {
   track: (event: EventName, properties?: Record<string, unknown>) => void;

@@ -13,10 +13,12 @@ import {
   NEIGHBORHOOD_OPTIONS,
   PRICE_LEVELS,
   RATINGS,
+  RATING_SOURCES,
   TIME_BUCKETS,
   filterHref,
   hasActiveFilters,
   labelFor,
+  ratingTriggerLabel,
   type FilterState,
 } from "./filters";
 
@@ -72,7 +74,7 @@ export function FilterBar({ city, state }: Props) {
   const areaLabel = state.neighborhood ?? "Area";
   const cuisineLabel = labelFor(CUISINES, state.cuisine) ?? "Cuisine";
   const priceLabel = labelFor(PRICE_LEVELS, state.price) ?? "Price";
-  const ratingLabel = state.minRating ? `${state.minRating}+` : "Stars";
+  const ratingLabel = ratingTriggerLabel(state);
   const drinkLabel = labelFor(DRINKS, state.drink) ?? "Drink types";
   const reservationLabel = state.reservations ? "Takes reservations" : "Reservations";
   const moreLabel = labelFor(DEAL_TYPES, state.dealType) ?? labelFor(FEATURES, state.feature) ?? "More";
@@ -113,7 +115,12 @@ export function FilterBar({ city, state }: Props) {
         <Trigger label={areaLabel} open={open === "area"} active={Boolean(state.neighborhood)} onClick={() => toggle("area")} />
         <Trigger label={cuisineLabel} open={open === "cuisine"} active={Boolean(state.cuisine)} onClick={() => toggle("cuisine")} />
         <Trigger label={priceLabel} open={open === "price"} active={Boolean(state.price)} onClick={() => toggle("price")} />
-        <Trigger label={ratingLabel} open={open === "rating"} active={Boolean(state.minRating)} onClick={() => toggle("rating")} />
+        <Trigger
+          label={ratingLabel}
+          open={open === "rating"}
+          active={Boolean(state.minRating || (state.ratingSource && state.ratingSource !== "findgood") || state.sort === "rating")}
+          onClick={() => toggle("rating")}
+        />
         <Trigger label={drinkLabel} open={open === "drinks"} active={Boolean(state.drink)} onClick={() => toggle("drinks")} />
         <Trigger
           label={reservationLabel}
@@ -183,7 +190,26 @@ export function FilterBar({ city, state }: Props) {
       ) : null}
 
       {open === "rating" ? (
-        <Panel title="FindGood.Food rating">
+        <Panel title="Stars">
+          <p className="w-full text-xs text-muted">Rate by</p>
+          {RATING_SOURCES.map((option) => (
+            <Chip
+              key={option.value}
+              href={href({
+                ratingSource:
+                  option.value === "findgood" || state.ratingSource === option.value ? undefined : option.value,
+              })}
+              on={
+                option.value === "findgood"
+                  ? !state.ratingSource || state.ratingSource === "findgood"
+                  : state.ratingSource === option.value
+              }
+            >
+              {option.label}
+            </Chip>
+          ))}
+          <span className="w-full" />
+          <p className="w-full text-xs text-muted">Minimum</p>
           {RATINGS.map((option) => (
             <Chip
               key={option.value}
@@ -193,6 +219,11 @@ export function FilterBar({ city, state }: Props) {
               {option.label}
             </Chip>
           ))}
+          <span className="w-full" />
+          <p className="w-full text-xs text-muted">Sort</p>
+          <Chip href={href({ sort: state.sort === "rating" ? undefined : "rating" })} on={state.sort === "rating"}>
+            Highest rated
+          </Chip>
         </Panel>
       ) : null}
 

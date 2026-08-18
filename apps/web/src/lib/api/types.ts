@@ -96,6 +96,13 @@ export interface VenueCard {
   rating_review_count?: number;
   rating_source_count?: number;
   rating_providers?: string[];
+  provider_ratings?: ProviderRating[];
+}
+
+export interface ProviderRating {
+  provider: string;
+  rating: string | null;
+  review_count: number | null;
 }
 
 export interface Location {
@@ -158,6 +165,7 @@ export interface Venue {
   rating_review_count?: number;
   rating_source_count?: number;
   rating_providers?: string[];
+  provider_ratings?: ProviderRating[];
   locations: Location[];
   current_deals: Deal[];
   upcoming_deals: Deal[];
@@ -379,7 +387,36 @@ export interface AdminSystem {
   crawler: string;
   google: string;
   yelp: string;
+  tripadvisor?: string;
   opentable: string;
+  maps?: string;
+  geocoding?: string;
+  geocodes_today?: number;
+  locations_waiting_geocode?: number;
+}
+
+export interface AdminMapQuality {
+  total_locations: number;
+  published_locations: number;
+  map_eligible: number;
+  map_ineligible: number;
+  needs_review: number;
+  invalid: number;
+  missing_geocode_source: number;
+  geocodes_today: number;
+  geocoding_configured: boolean;
+  items: {
+    id: string;
+    venue_id: string | null;
+    venue_name: string | null;
+    address: string;
+    city: string;
+    latitude: string;
+    longitude: string;
+    location_confidence: string;
+    geocode_source: string | null;
+    geocode_accuracy: string | null;
+  }[];
 }
 
 export interface AdminFreshness {
@@ -441,6 +478,8 @@ export interface DealQuery {
   when?: string;
   day?: string;
   min_rating?: string;
+  rating_source?: string;
+  sort?: string;
   vertical?: Vertical;
   page?: number;
   page_size?: number;

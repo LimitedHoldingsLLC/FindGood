@@ -10,6 +10,7 @@ import type {
   AdminRun,
   AdminSearch,
   AdminSession,
+  AdminMapQuality,
   AdminSystem,
   AdminVenue,
   Candidate,
@@ -87,6 +88,12 @@ export const api = {
   flags(): Promise<{ flags: Record<string, boolean> }> {
     return request("/api/v1/flags");
   },
+  listMapLocations(
+    query: Record<string, string | number | boolean | undefined>,
+    init?: RequestInit,
+  ): Promise<import("@/features/map/types").MapList> {
+    return request(`/api/v1/map/locations${queryString(query)}`, init);
+  },
 };
 
 export function createAdminSession(username: string, password: string) {
@@ -150,6 +157,8 @@ export function adminApi(token: string) {
       request<AdminRun>(`/api/v1/admin/ops/venues/${id}/refresh-google`, { method: "POST", headers, body: "{}" }),
     refreshYelp: (id: string) =>
       request<AdminRun>(`/api/v1/admin/ops/venues/${id}/refresh-yelp`, { method: "POST", headers, body: "{}" }),
+    refreshTripadvisor: (id: string) =>
+      request<AdminRun>(`/api/v1/admin/ops/venues/${id}/refresh-tripadvisor`, { method: "POST", headers, body: "{}" }),
     opsDeals: (params: Record<string, string | number | undefined> = {}) =>
       request<AdminPage<AdminDeal>>(`/api/v1/admin/ops/deals${queryString(params)}`, { headers }),
     opsDeal: (id: string) => request<AdminDeal>(`/api/v1/admin/ops/deals/${id}`, { headers }),
@@ -179,6 +188,12 @@ export function adminApi(token: string) {
         headers,
         body: JSON.stringify(body),
       }),
+    tripadvisorSearch: (body: object) =>
+      request<AdminRun>("/api/v1/admin/ingestion/tripadvisor/search", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      }),
     runs: (params: Record<string, string | number | undefined> = {}) =>
       request<AdminPage<AdminRun>>(`/api/v1/admin/ingestion/runs${queryString(params)}`, { headers }),
     run: (id: string) => request<AdminRun>(`/api/v1/admin/ingestion/runs/${id}`, { headers }),
@@ -202,6 +217,19 @@ export function adminApi(token: string) {
     errors: () => request<AdminErrorGroup[]>("/api/v1/admin/errors", { headers }),
     crawlDomains: () => request<CrawlDomain[]>("/api/v1/admin/crawler/domains", { headers }),
     system: () => request<AdminSystem>("/api/v1/admin/system", { headers }),
+    mapQuality: () => request<AdminMapQuality>("/api/v1/admin/map/quality", { headers }),
+    updateLocationCoordinates: (id: string, body: object) =>
+      request<Record<string, string>>(`/api/v1/admin/ops/locations/${id}/coordinates`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify(body),
+      }),
+    regeocodeLocation: (id: string) =>
+      request<{ job_id: string }>(`/api/v1/admin/ops/locations/${id}/re-geocode`, {
+        method: "POST",
+        headers,
+        body: "{}",
+      }),
     audit: () => request<AdminAudit[]>("/api/v1/admin/audit", { headers }),
     bulkCrawl: (venueIds: string[], confirm: boolean) =>
       request<{ queued: number; needs_confirmation?: boolean }>("/api/v1/admin/bulk/crawl", {

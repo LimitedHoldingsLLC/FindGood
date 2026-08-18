@@ -20,6 +20,7 @@ const NAV = [
   { href: "/admin/errors", label: "Errors" },
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/health", label: "System health" },
+  { href: "/admin/map", label: "Map quality" },
   { href: "/admin/catalog", label: "Catalog" },
   { href: "/admin/settings", label: "Settings" },
 ];

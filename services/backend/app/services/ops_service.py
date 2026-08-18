@@ -19,6 +19,8 @@ from app.api.admin_schemas import (
     ErrorGroupOut,
     FreshnessBucketOut,
     IngestionRunOut,
+    LocationCoordinateIn,
+    MapQualityOut,
     OpsDealOut,
     OpsOverviewOut,
     OpsVenueOut,
@@ -37,6 +39,7 @@ from app.db.models.enums import (
     FreshnessStatus,
     IngestionJobType,
     IngestionRunStatus,
+    LocationConfidence,
     ProviderName,
     RecordStatus,
     ReviewItemStatus,
@@ -45,6 +48,7 @@ from app.db.models.enums import (
 )
 from app.db.models.verification import Verification
 from app.db.repositories.deal_repository import DealRepository
+from app.db.repositories.map_repository import MapRepository
 from app.db.repositories.ops_repository import OpsRepository
 from app.db.repositories.venue_repository import VenueRepository
 from app.db.repositories.verification_repository import VerificationRepository
@@ -56,6 +60,7 @@ from app.domain.verification.policy import (
 )
 from app.ingestion.providers.base import ProviderSearchQuery
 from app.workers.queue import (
+    JOB_GEOCODE_ENRICH,
     JOB_PROVIDER_SEARCH,
     JOB_WEBSITE_CRAWL,
     JobQueue,
@@ -288,6 +293,7 @@ class OpsService:
         for name, key_attr, enabled_attr in (
             (ProviderName.GOOGLE_PLACES, "google_places_api_key", "google_places_enabled"),
             (ProviderName.YELP, "yelp_api_key", "yelp_enabled"),
+            (ProviderName.TRIPADVISOR, "tripadvisor_api_key", "tripadvisor_enabled"),
             (ProviderName.OPENTABLE, "opentable_api_key", "opentable_enabled"),
             (ProviderName.WEBSITE_CRAWLER, "crawler_user_agent", None),
         ):
@@ -312,7 +318,11 @@ class OpsService:
                     note=(
                         "OpenTable needs an authorized partner feed before it can import data."
                         if name == ProviderName.OPENTABLE
-                        else None
+                        else (
+                            "Tripadvisor Content API needs partner approval. Do not scrape HTML."
+                            if name == ProviderName.TRIPADVISOR
+                            else None
+                        )
                     ),
                 )
             )
@@ -423,8 +433,88 @@ class OpsService:
             crawler="degraded" if crawl_failed else "healthy",
             google="healthy" if self.settings.google_places_api_key else "not configured",
             yelp="healthy" if self.settings.yelp_api_key else "not configured",
+            tripadvisor="healthy" if self.settings.tripadvisor_api_key else "not configured",
             opentable="not configured",
+            maps="healthy" if self.settings.feature_maps else "disabled",
+            geocoding=(
+                "healthy"
+                if (self.settings.geocoding_api_key or self.settings.google_places_api_key)
+                and self.settings.geocoding_enabled
+                else "not configured"
+            ),
+            geocodes_today=(
+                usage.call_count
+                if (usage := self.ops.provider_usage("google_geocoding", datetime.now(UTC).date()))
+                else 0
+            ),
+            locations_waiting_geocode=MapRepository(self.db).quality_counts()["missing_geocode_source"],
         )
+
+    def map_quality(self) -> MapQualityOut:
+        counts = MapRepository(self.db).quality_counts()
+        usage = self.ops.provider_usage("google_geocoding", datetime.now(UTC).date())
+        items = []
+        for location in MapRepository(self.db).locations_needing_review():
+            venue = location.venue
+            items.append(
+                {
+                    "id": str(location.id),
+                    "venue_id": str(venue.id) if venue else None,
+                    "venue_name": venue.name if venue else None,
+                    "address": location.address_line1,
+                    "city": location.city,
+                    "latitude": str(location.latitude),
+                    "longitude": str(location.longitude),
+                    "location_confidence": location.location_confidence,
+                    "geocode_source": location.geocode_source,
+                    "geocode_accuracy": location.geocode_accuracy,
+                }
+            )
+        return MapQualityOut(
+            **counts,
+            geocodes_today=usage.call_count if usage else 0,
+            geocoding_configured=bool(
+                self.settings.geocoding_enabled
+                and (self.settings.geocoding_api_key or self.settings.google_places_api_key)
+            ),
+            items=items,
+        )
+
+    def update_location_coordinates(self, location_id: UUID, payload: LocationCoordinateIn, *, actor: str) -> dict:
+        location = MapRepository(self.db).get_location(location_id)
+        if location is None:
+            raise NotFoundError("Location not found")
+        try:
+            confidence = LocationConfidence(payload.location_confidence)
+        except ValueError as exc:
+            raise ValidationFailed("Unknown location confidence") from exc
+        location.latitude = payload.latitude
+        location.longitude = payload.longitude
+        location.location_confidence = confidence
+        location.geocode_source = "manual"
+        location.geocoded_at = datetime.now(UTC)
+        if confidence == LocationConfidence.VERIFIED:
+            location.coordinates_verified_at = datetime.now(UTC)
+        self._audit(
+            actor,
+            "location_coordinates_updated",
+            "venue_location",
+            location.id,
+            {"notes": payload.notes, "confidence": confidence},
+        )
+        self.db.flush()
+        return {"id": str(location.id), "latitude": str(location.latitude), "longitude": str(location.longitude)}
+
+    def queue_regeocode(self, location_id: UUID, *, actor: str) -> dict:
+        location = MapRepository(self.db).get_location(location_id)
+        if location is None:
+            raise NotFoundError("Location not found")
+        location.geocode_source = None
+        location.address_hash = None
+        job_id = enqueue_named(self.queue, JOB_GEOCODE_ENRICH, {}, idempotency_key=f"geocode:{location.id}")
+        self._audit(actor, "location_regeocode_queued", "venue_location", location.id, {})
+        self.db.flush()
+        return {"job_id": job_id}
 
     def search(self, q: str) -> SearchOut:
         raw = self.ops.search(q)

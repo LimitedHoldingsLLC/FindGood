@@ -50,14 +50,29 @@ Manually created admin deals still get a publication row (and usually a `manual`
 | `drink_kinds` | Controlled array: `cocktails`, `beer`, `wine`, `natural_wine`, `sake`, `nonalcoholic`. |
 | `accepts_reservations` | Whether the business takes reservations. Booking URLs stay off this table. |
 | `features` | Controlled array: `patio`, `rooftop`, `outdoor`, `late_night`, `good_for_groups`, `walk_in`. |
-| `rating` | FindGood.Food composite (1–5, `Numeric`). Bayesian average of official provider scores, weighted by review count. |
-| `rating_review_count` / `rating_source_count` / `rating_providers` | How the composite was built. Provider star values stay on `venue_provider_links`. |
+| `rating` | FindGood.Food composite (1–5, `Numeric`). Bayesian average of official Google, Yelp, and Tripadvisor scores, weighted by review count. |
+| `rating_review_count` / `rating_source_count` / `rating_providers` | How the composite was built. Provider star values stay on `venue_provider_links`. Consumer `?rating_source=` filters that link; `?sort=rating` orders by it (or by the composite when the source is FindGood.Food). |
 | `vertical` | Controlled taxonomy. Default `food`. Consumer list endpoints default to `food` when the query param is omitted. |
 | `status` | `draft` / `published` / `archived` / `disabled` |
 
 ### VenueLocation
 
 Geography and schedule timezone live here, not on the venue and not in JSON.
+
+Map eligibility uses these additive columns:
+
+| Column | Role |
+| --- | --- |
+| `latitude`, `longitude` | Stored coordinates. Required. Never geocoded during a consumer map request. |
+| `location_confidence` | `verified` / `high_confidence` / `approximate` / `needs_review` / `invalid`. Review and invalid pins stay off the consumer map. |
+| `geocode_source` | `seed`, `manual`, `address_geocode`, or `provider_*`. Not a Google Place ID. |
+| `geocode_accuracy` | Provider accuracy when known (`rooftop`, `approximate`, …). |
+| `address_hash`, `geocoded_at` | Skip repeat geocodes when the address has not changed. |
+| `map_demand_count` | Lightweight interest signal that can pull `next_refresh_at` earlier. |
+
+A location does not need a Google Place ID to appear. Provider IDs stay on `venue_provider_links`.
+
+Indexed bounding-box queries are enough at current scale. Reconsider PostGIS after hundreds of thousands of locations or when bbox scans become a measured bottleneck. Client clustering first; server clustering if a zoomed-in viewport still hits `MAP_MAX_RESULTS`.
 
 A venue may have many locations. Today every deal attaches to **exactly one** location (`deals.venue_location_id` is required).
 

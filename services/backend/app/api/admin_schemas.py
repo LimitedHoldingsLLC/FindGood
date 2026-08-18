@@ -164,7 +164,12 @@ class SystemHealthOut(OpsModel):
     crawler: str
     google: str
     yelp: str
+    tripadvisor: str
     opentable: str
+    maps: str = "healthy"
+    geocoding: str = "not configured"
+    geocodes_today: int = 0
+    locations_waiting_geocode: int = 0
 
 
 class SearchOut(OpsModel):
@@ -231,3 +236,23 @@ class CrawlDomainOut(OpsModel):
     avg_response_ms: float | None
     next_permitted_at: datetime | None
     last_error: str | None
+
+
+class MapQualityOut(OpsModel):
+    total_locations: int
+    published_locations: int
+    map_eligible: int
+    map_ineligible: int
+    needs_review: int
+    invalid: int
+    missing_geocode_source: int
+    geocodes_today: int
+    geocoding_configured: bool
+    items: list[dict]
+
+
+class LocationCoordinateIn(OpsModel):
+    latitude: Decimal
+    longitude: Decimal
+    location_confidence: str = "verified"
+    notes: str | None = None

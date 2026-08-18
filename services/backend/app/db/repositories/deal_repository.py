@@ -6,7 +6,7 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import NotFoundError
-from app.db.models import Deal, DealItem, DealPublication, DealSchedule, Venue, VenueLocation
+from app.db.models import Deal, DealItem, DealPublication, DealSchedule, Venue, VenueLocation, VenueProviderLink
 from app.db.models.enums import FreshnessStatus, PublicationState, RecordStatus, SightingState
 from app.db.models.verification import Verification
 
@@ -20,7 +20,7 @@ class DealRepository:
             selectinload(Deal.schedules),
             selectinload(Deal.items),
             selectinload(Deal.publications),
-            selectinload(Deal.venue_location).selectinload(VenueLocation.venue),
+            selectinload(Deal.venue_location).selectinload(VenueLocation.venue).selectinload(Venue.provider_links),
         )
 
     def get(self, deal_id: UUID) -> Deal:
@@ -51,6 +51,8 @@ class DealRepository:
         feature: str | None = None,
         weekday: int | None = None,
         min_rating: Decimal | None = None,
+        rating_source: str | None = None,
+        sort: str | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[Deal], int]:
@@ -108,7 +110,14 @@ class DealRepository:
         if weekday is not None:
             weekday_deals = select(DealSchedule.deal_id).where(DealSchedule.days_of_week.contains([weekday]))
             stmt = stmt.where(Deal.id.in_(weekday_deals))
-        if min_rating is not None:
+        provider_source = rating_source not in (None, "", "findgood")
+        if provider_source:
+            stmt = stmt.join(VenueProviderLink, VenueProviderLink.venue_id == Venue.id).where(
+                VenueProviderLink.provider == rating_source
+            )
+            if min_rating is not None:
+                stmt = stmt.where(VenueProviderLink.rating >= min_rating)
+        elif min_rating is not None:
             stmt = stmt.where(Venue.rating >= min_rating)
         if max_price is not None:
             stmt = stmt.where(Deal.id.in_(select(DealItem.deal_id).where(DealItem.deal_price <= max_price)))
@@ -123,7 +132,12 @@ class DealRepository:
                 VenueLocation.longitude.between(lng - lng_delta, lng + lng_delta),
             )
         count = self.db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-        rows = list(self.db.scalars(self._eager(stmt).order_by(Deal.title).offset(offset).limit(limit)))
+        if sort == "rating":
+            rating_col = VenueProviderLink.rating if provider_source else Venue.rating
+            ordered = self._eager(stmt).order_by(rating_col.desc().nulls_last(), Deal.title)
+        else:
+            ordered = self._eager(stmt).order_by(Deal.title)
+        rows = list(self.db.scalars(ordered.offset(offset).limit(limit)))
         return rows, int(count)
 
     def list_for_location(self, location_id: UUID) -> list[Deal]:

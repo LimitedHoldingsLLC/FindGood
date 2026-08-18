@@ -27,6 +27,7 @@ from app.ingestion.persist import BusinessPersister
 from app.ingestion.providers.base import ProviderSearchQuery
 from app.ingestion.providers.google_places import GooglePlacesAdapter
 from app.ingestion.providers.opentable import OpenTableAdapter
+from app.ingestion.providers.tripadvisor import TripadvisorAdapter
 from app.ingestion.providers.yelp import YelpAdapter
 from app.ingestion.safety import assert_public_http_url
 from app.services.review_flags import flag_review
@@ -84,6 +85,12 @@ class IngestionOrchestrator:
             client=self.http,
             max_calls_per_run=settings.yelp_max_calls_per_run,
             enabled=settings.yelp_enabled,
+        )
+        self.tripadvisor = TripadvisorAdapter(
+            api_key=settings.tripadvisor_api_key,
+            client=self.http,
+            max_calls_per_run=settings.tripadvisor_max_calls_per_run,
+            enabled=settings.tripadvisor_enabled,
         )
         self.opentable = OpenTableAdapter(
             api_key=settings.opentable_api_key,
@@ -261,6 +268,7 @@ class IngestionOrchestrator:
         mapping = {
             "google_places": self.google,
             "yelp": self.yelp,
+            "tripadvisor": self.tripadvisor,
             "opentable": self.opentable,
         }
         adapter = mapping.get(provider)

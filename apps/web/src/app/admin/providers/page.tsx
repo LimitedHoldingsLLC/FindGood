@@ -20,11 +20,15 @@ export default function ProvidersPage() {
   if (!client) return null;
   const api = client;
 
-  async function search(kind: "google" | "yelp") {
+  async function search(kind: "google" | "yelp" | "tripadvisor") {
     setMessage(null);
     try {
       const next =
-        kind === "google" ? await api.googleSearch({ city, sync: false }) : await api.yelpSearch({ city, sync: false });
+        kind === "google"
+          ? await api.googleSearch({ city, sync: false })
+          : kind === "yelp"
+            ? await api.yelpSearch({ city, sync: false })
+            : await api.tripadvisorSearch({ city, sync: false });
       setRun(next);
       setMessage(`Queued ${kind} search in ${city}`);
     } catch (err) {
@@ -35,7 +39,10 @@ export default function ProvidersPage() {
   return (
     <div className="space-y-6">
       <h1 className="font-display text-4xl">Providers</h1>
-      <p className="text-sm text-muted">API keys are never shown. Discovery calls cost money at Google and may count against Yelp limits.</p>
+      <p className="text-sm text-muted">
+        API keys are never shown. Discovery calls cost money at Google and may count against Yelp and Tripadvisor
+        limits.
+      </p>
       <div className="grid gap-4 md:grid-cols-2">
         {providers.map((provider) => (
           <section key={provider.name} className="rounded-2xl border border-ink/10 bg-card p-5">
@@ -60,6 +67,9 @@ export default function ProvidersPage() {
         </button>
         <button className="rounded-lg border border-ink/15 px-3 py-2" type="button" onClick={() => search("yelp")}>
           Run Yelp discovery
+        </button>
+        <button className="rounded-lg border border-ink/15 px-3 py-2" type="button" onClick={() => search("tripadvisor")}>
+          Run Tripadvisor discovery
         </button>
       </form>
       {message ? <p className="text-sm">{message}</p> : null}

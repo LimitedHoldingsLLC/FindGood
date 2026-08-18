@@ -13,6 +13,7 @@ __all__ = [
     "FreshnessStatus",
     "IngestionJobType",
     "IngestionRunStatus",
+    "LocationConfidence",
     "ProviderName",
     "ReviewItemStatus",
     "ReviewReason",
@@ -77,6 +78,7 @@ class SourceType(StrEnum):
     PARTNER_API = "partner_api"
     GOOGLE_PLACES = "google_places"
     YELP = "yelp"
+    TRIPADVISOR = "tripadvisor"
     OPENTABLE = "opentable"
     USER_REPORT = "user_report"
     INSTAGRAM = "instagram"
@@ -130,10 +132,19 @@ class CrawlRunStatus(StrEnum):
 class ProviderName(StrEnum):
     GOOGLE_PLACES = "google_places"
     YELP = "yelp"
+    TRIPADVISOR = "tripadvisor"
     OPENTABLE = "opentable"
     WEBSITE_CRAWLER = "website_crawler"
     MANUAL = "manual"
     DEMO = "demo"
+
+
+class LocationConfidence(StrEnum):
+    VERIFIED = "verified"
+    HIGH_CONFIDENCE = "high_confidence"
+    APPROXIMATE = "approximate"
+    NEEDS_REVIEW = "needs_review"
+    INVALID = "invalid"
 
 
 class FreshnessStatus(StrEnum):

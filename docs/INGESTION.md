@@ -50,6 +50,7 @@ An LLM extractor later implements the same `Extractor` protocol. Do not fork the
 | `DemoExtractor` / `HtmlOfferExtractor` | Demo fixtures, or JSON-LD + heuristic happy-hour text. |
 | `GooglePlacesAdapter` | Places API (New) text search and place details. Identity only, not offers. Ratings feed the FindGood.Food composite. |
 | `YelpAdapter` | Yelp Fusion search and business details. Identity only. Ratings feed the composite. |
+| `TripadvisorAdapter` | Tripadvisor Content API location search and details. Identity only. Ratings feed the composite. Partner approval required; no HTML scrape. |
 | `OpenTableAdapter` | Explicitly not configured until an authorized partner feed exists. |
 | `DealNormalizer` / `DealValidator` | Title, schedule, money, confidence. |
 | `DealPublisher` | Admin approve path. Requires a `venue_location_id`. |
@@ -78,7 +79,9 @@ Treat fetched content as untrusted input. Text inside a restaurant page must nev
 
 Do not bypass auth, CAPTCHAs, or access controls. Do not scrape private content.
 
-Ratings come from official provider APIs (Google Places, Yelp Fusion today). Do not scrape Google, Yelp, Tripadvisor, or OpenTable review pages. A later source must be another authorized adapter that emits `NormalizedBusiness.rating` / `review_count`.
+Ratings come from official provider APIs (Google Places, Yelp Fusion, Tripadvisor Content API). Do not scrape Google, Yelp, Tripadvisor, or OpenTable review pages. A later source must be another authorized adapter that emits `NormalizedBusiness.rating` / `review_count`.
+
+Geocoding is a background enrichment job (`location.geocode`). Consumer map rendering never geocodes and never calls Places. Provider terms still apply: Google/Yelp/Tripadvisor metadata may enrich a canonical FindGood venue, but they do not decide whether that venue appears on the map.
 
 ## Last-seen vs last-verified
 

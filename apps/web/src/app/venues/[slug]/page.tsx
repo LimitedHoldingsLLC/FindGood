@@ -4,12 +4,18 @@ import { notFound } from "next/navigation";
 
 import { DealCard } from "@/features/deals/DealCard";
 import { ApiError, api } from "@/lib/api/client";
-import { formatRating, priceLevelLabel, ratingSourceLabel, titleCaseKey } from "@/lib/format";
+import { formatRating, priceLevelLabel, providerLabel, ratingSourceLabel, titleCaseKey } from "@/lib/format";
 import { maps } from "@/lib/maps";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ from?: string }> };
+
+function mapReturnHref(from: string | undefined): string | null {
+  if (!from) return null;
+  const path = from.startsWith("/map") ? from : null;
+  return path;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -25,8 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function VenuePage({ params }: Props) {
+export default async function VenuePage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { from } = await searchParams;
+  const backToMap = mapReturnHref(from);
   try {
     const venue = await api.getVenue(slug);
     const location = venue.locations[0];
@@ -35,6 +43,13 @@ export default async function VenuePage({ params }: Props) {
       : null;
     return (
       <article>
+        {backToMap ? (
+          <p className="mb-4 text-sm">
+            <Link className="text-terracotta underline-offset-4 hover:underline" href={backToMap}>
+              Back to map
+            </Link>
+          </p>
+        ) : null}
         <p className="text-sm uppercase tracking-[0.2em] text-terracotta">
           {location?.neighborhood ?? location?.city}
         </p>
@@ -48,6 +63,19 @@ export default async function VenuePage({ params }: Props) {
                 ? ` · ${venue.rating_review_count.toLocaleString()} reviews`
                 : ""}
               {ratingSourceLabel(venue.rating_providers) ? ` from ${ratingSourceLabel(venue.rating_providers)}` : ""}
+            </p>
+          ) : null}
+          {venue.provider_ratings?.length ? (
+            <p>
+              {venue.provider_ratings
+                .map((row) => {
+                  const stars = formatRating(row.rating);
+                  if (!stars) return null;
+                  const reviews = row.review_count ? ` (${row.review_count.toLocaleString()})` : "";
+                  return `★ ${stars} ${providerLabel(row.provider)}${reviews}`;
+                })
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           ) : null}
           {priceLevelLabel(venue.price_level) ? <p>{priceLevelLabel(venue.price_level)}</p> : null}

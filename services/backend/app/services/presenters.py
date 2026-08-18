@@ -9,6 +9,7 @@ from app.api.schemas import (
     DealScoreOut,
     LocationOut,
     ProvenanceOut,
+    ProviderRatingOut,
     ScoreFactorOut,
     VenueCardOut,
     VenueOut,
@@ -53,6 +54,7 @@ def venue_card(venue: Venue, location: VenueLocation) -> VenueCardOut:
         rating_review_count=int(getattr(venue, "rating_review_count", 0) or 0),
         rating_source_count=int(getattr(venue, "rating_source_count", 0) or 0),
         rating_providers=list(getattr(venue, "rating_providers", None) or []),
+        provider_ratings=_provider_ratings(venue),
     )
 
 
@@ -204,10 +206,29 @@ def present_venue(
         rating_review_count=int(getattr(venue, "rating_review_count", 0) or 0),
         rating_source_count=int(getattr(venue, "rating_source_count", 0) or 0),
         rating_providers=list(getattr(venue, "rating_providers", None) or []),
+        provider_ratings=_provider_ratings(venue),
         locations=[location_out(location) for location in venue.locations],
         current_deals=current,
         upcoming_deals=upcoming,
     )
+
+
+def _provider_ratings(venue: Venue) -> list[ProviderRatingOut]:
+    seen: set[str] = set()
+    ratings: list[ProviderRatingOut] = []
+    for link in getattr(venue, "provider_links", None) or []:
+        provider = getattr(link, "provider", None)
+        if provider is None or provider in seen:
+            continue
+        seen.add(provider)
+        ratings.append(
+            ProviderRatingOut(
+                provider=provider,
+                rating=getattr(link, "rating", None),
+                review_count=getattr(link, "review_count", None),
+            )
+        )
+    return ratings
 
 
 def utcnow() -> datetime:

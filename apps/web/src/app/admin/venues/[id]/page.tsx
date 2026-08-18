@@ -72,6 +72,12 @@ export default function AdminVenueDetailPage() {
         <button className="rounded-full border border-ink/15 px-4 py-2" onClick={() => act("Yelp refresh", () => client.refreshYelp(venue.id))}>
           Refresh Yelp
         </button>
+        <button
+          className="rounded-full border border-ink/15 px-4 py-2"
+          onClick={() => act("Tripadvisor refresh", () => client.refreshTripadvisor(venue.id))}
+        >
+          Refresh Tripadvisor
+        </button>
         <button className="rounded-full border border-terracotta/40 px-4 py-2 text-terracotta" onClick={() => act("Disabled", () => client.disableVenue(venue.id))}>
           Disable
         </button>

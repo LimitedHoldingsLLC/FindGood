@@ -24,3 +24,56 @@ body {
   background: #c24a1a;
   color: #fff9f1;
 }
+
+.fg-marker,
+.fg-cluster {
+  position: absolute;
+  transform: translate(-50%, -110%);
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-outfit), Outfit, system-ui, sans-serif;
+}
+
+.fg-marker {
+  border-radius: 999px;
+  background: #1b1713;
+  color: #fff9f1;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: 0 10px 24px -16px rgba(27, 23, 19, 0.7);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.fg-marker.is-hovered,
+.fg-marker:hover {
+  transform: translate(-50%, -118%) scale(1.04);
+  background: #c24a1a;
+}
+
+.fg-marker.is-selected {
+  transform: translate(-50%, -124%) scale(1.08);
+  background: #c24a1a;
+  z-index: 40;
+}
+
+.fg-cluster {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: #c24a1a;
+  color: #fff9f1;
+  font-weight: 700;
+  box-shadow: 0 12px 24px -14px rgba(194, 74, 26, 0.8);
+}
+
+.fg-user {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #2c4a3e;
+  box-shadow: 0 0 0 6px rgba(44, 74, 62, 0.2);
+}

@@ -46,5 +46,29 @@ class TimeBucket(StrEnum):
     LATE_NIGHT = "late_night"
 
 
+class MapWhen(StrEnum):
+    NOW = "now"
+    TONIGHT = "tonight"
+    TODAY = "today"
+    TOMORROW = "tomorrow"
+    WEEKEND = "weekend"
+    LUNCH = "lunch"
+    AFTERNOON = "afternoon"
+    EVENING = "evening"
+    LATE_NIGHT = "late_night"
+
+
+class RatingSource(StrEnum):
+    FINDGOOD = "findgood"
+    GOOGLE_PLACES = "google_places"
+    YELP = "yelp"
+    TRIPADVISOR = "tripadvisor"
+
+
+class DealSort(StrEnum):
+    TITLE = "title"
+    RATING = "rating"
+
+
 PRICE_LEVELS = frozenset({1, 2, 3, 4})
 ISO_WEEKDAYS = frozenset(range(1, 8))
